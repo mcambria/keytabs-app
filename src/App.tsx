@@ -56,7 +56,7 @@ function App() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <Slate
             editor={editor}
-            initialValue={value}
+            value={value}
             onChange={newValue => setValue(newValue as CustomElement[])}
           >
             <Editable
