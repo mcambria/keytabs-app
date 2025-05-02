@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 const NUM_STRINGS = 6;
 const NUM_COLUMNS = 32;
 const EMPTY_CELL = "--";
+const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 
 type Position = { x: number; y: number };
 
@@ -89,19 +90,22 @@ const TabEditor: React.FC = () => {
 
   return (
     <div
-      className="outline-none inline-block font-mono bg-black p-4"
+      className="outline-none inline-block font-mono bg-gray-900 p-4"
       tabIndex={0}
       ref={editorRef}
       onKeyDown={handleKeyDown}
     >
       {tabData.map((row, y) => (
         <div className="flex" key={y}>
+          <div className="text-right text-gray-400 pr-2">
+            {STRING_NAMES[y]}
+          </div>
           {row.map((cell, x) => (
             <div
               key={`${x}-${y}`}
-              className={`w-8 text-center text-gray-300 border-r border-b border-gray-700 px-1 ${
-                x === cursor.x && y === cursor.y ? "outline outline-1 outline-blue-400 bg-gray-900" : ""
-              } ${isSelected(x, y) ? "bg-blue-800/70" : ""}`}
+              className={`text-center text-gray-300 ${
+                x === cursor.x && y === cursor.y ? "outline outline-1 outline-blue-400 bg-gray-800" : ""
+              } ${isSelected(x, y) ? "bg-blue-900/50" : ""}`}
             >
               {cell}
             </div>
