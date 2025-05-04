@@ -30,7 +30,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
     return (
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="text-[#606366] hover:text-[#a9b7c6] transition-colors"
+        className="text-ide-text-muted hover:text-ide-text transition-colors"
       >
         {arrowIcon}
       </button>
@@ -38,10 +38,10 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   };
 
   return (
-    <div className={`bg-[#1e1e1e] rounded-lg shadow-lg p-6 transition-all duration-200 ${isCollapsed ? collapsedWidth : defaultWidth}`}>
+    <div className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 ${isCollapsed ? collapsedWidth : defaultWidth}`}>
       <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         {placement === CollapsiblePanelPlacement.RIGHT && getArrowButton()}
-        {<h2 className={`text-xl font-semibold text-[#a9b7c6] transition-opacity duration-200 ${isCollapsed ? 'hidden' : ''}`}>
+        {<h2 className={`text-xl font-semibold text-ide-text transition-opacity duration-200 ${isCollapsed ? 'hidden' : ''}`}>
           {title}
         </h2>}
         {placement === CollapsiblePanelPlacement.LEFT && getArrowButton()}
