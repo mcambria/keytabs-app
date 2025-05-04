@@ -118,7 +118,7 @@ const TabEditor: React.FC = () => {
 
   return (
     <div
-      className="outline-none inline-block font-mono bg-gray-900 p-4"
+      className="outline-none inline-block font-mono text-[#a9b7c6]"
       tabIndex={0}
       ref={editorRef}
       onKeyDown={handleKeyDown}
@@ -127,17 +127,17 @@ const TabEditor: React.FC = () => {
         <div key={lineIndex} className="mb-4">
           {tabLine.map((row, y) => (
             <div className="flex" key={y}>
-              <div className="text-right text-gray-400 pr-2">
+              <div className="text-right text-[#606366] pr-2 select-none">
                 {STRING_NAMES[y]}
               </div>
               {row.map((cell, x) => (
                 <div
                   key={`${x}-${y}`}
-                  className={`text-center text-gray-300 ${
+                  className={`text-center ${
                     x === cursor.x && y === cursor.y && lineIndex === cursor.line
-                      ? "outline outline-1 outline-blue-400 bg-gray-800"
+                      ? "bg-[#2d2d2d]"
                       : ""
-                  } ${isSelected(x, y, lineIndex) ? "bg-blue-900/50" : ""}`}
+                  } ${isSelected(x, y, lineIndex) ? "bg-[#2d2d2d]/50" : ""}`}
                 >
                   {cell}
                 </div>
