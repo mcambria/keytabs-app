@@ -28,7 +28,7 @@ const TabEditor: React.FC = () => {
         x: Math.max(0, Math.min(NUM_COLUMNS - 1, prev.x + dx)),
         y: Math.max(0, Math.min(NUM_STRINGS - 1, prev.y + dy)),
         line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
-      };
+      } as Position;
       if (shift) {
         if (!selectionStart) setSelectionStart(prev);
       } else {
