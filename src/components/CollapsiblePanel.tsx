@@ -16,7 +16,7 @@ export enum CollapsiblePanelPlacement {
 const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   title,
   children,
-  defaultWidth = 'w-64',
+  defaultWidth = 'w-1/5',
   collapsedWidth = 'w-12',
   placement
 }) => {

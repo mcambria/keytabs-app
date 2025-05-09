@@ -8,6 +8,9 @@ const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 type Position = { x: number; y: number; line: number };
 
 const TabEditor: React.FC = () => {
+  // Song model
+  const [song, setSong] = useState("");
+  const [artist, setArtist] = useState("");
   const [tabLines, setTabLines] = useState([
     Array.from({ length: NUM_STRINGS }, () =>
       Array.from({ length: NUM_COLUMNS }, () => EMPTY_CELL)
@@ -22,7 +25,12 @@ const TabEditor: React.FC = () => {
     editorRef.current?.focus();
   }, []);
 
-  const moveCursor = (dx: number, dy: number, dline: number, shift: boolean) => {
+  const moveCursor = (
+    dx: number,
+    dy: number,
+    dline: number,
+    shift: boolean
+  ) => {
     setCursor((prev) => {
       const newCursor = {
         x: Math.max(0, Math.min(NUM_COLUMNS - 1, prev.x + dx)),
@@ -40,6 +48,10 @@ const TabEditor: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
+      // block firefox backspace to go back a page
+      case "Backspace":
+        e.preventDefault();
+        break;
       case "ArrowRight":
         moveCursor(1, 0, 0, e.shiftKey);
         e.preventDefault();
@@ -61,7 +73,9 @@ const TabEditor: React.FC = () => {
           // Create a new line
           setTabLines((prev) => {
             const newLines = [...prev];
-            newLines.splice(cursor.line + 1, 0, 
+            newLines.splice(
+              cursor.line + 1,
+              0,
               Array.from({ length: NUM_STRINGS }, () =>
                 Array.from({ length: NUM_COLUMNS }, () => EMPTY_CELL)
               )
@@ -106,46 +120,71 @@ const TabEditor: React.FC = () => {
   };
 
   const isSelected = (x: number, y: number, line: number) => {
-    if (!selectionStart) return x === cursor.x && y === cursor.y && line === cursor.line;
+    if (!selectionStart)
+      return x === cursor.x && y === cursor.y && line === cursor.line;
     const x1 = Math.min(selectionStart.x, cursor.x);
     const x2 = Math.max(selectionStart.x, cursor.x);
     const y1 = Math.min(selectionStart.y, cursor.y);
     const y2 = Math.max(selectionStart.y, cursor.y);
     const line1 = Math.min(selectionStart.line, cursor.line);
     const line2 = Math.max(selectionStart.line, cursor.line);
-    return x >= x1 && x <= x2 && y >= y1 && y <= y2 && line >= line1 && line <= line2;
+    return (
+      x >= x1 && x <= x2 && y >= y1 && y <= y2 && line >= line1 && line <= line2
+    );
   };
 
   return (
-    <div
-      className="outline-none inline-block font-mono text-ide-text"
-      tabIndex={0}
-      ref={editorRef}
-      onKeyDown={handleKeyDown}
-    >
-      {tabLines.map((tabLine, lineIndex) => (
-        <div key={lineIndex} className="mb-4">
-          {tabLine.map((row, y) => (
-            <div className="flex" key={y}>
-              <div className="text-right text-ide-text-muted pr-2 select-none">
-                {STRING_NAMES[y]}
-              </div>
-              {row.map((cell, x) => (
-                <div
-                  key={`${x}-${y}`}
-                  className={`text-center ${
-                    x === cursor.x && y === cursor.y && lineIndex === cursor.line
-                      ? "bg-ide-highlight"
-                      : ""
-                  } ${isSelected(x, y, lineIndex) ? "bg-ide-highlight/50" : ""}`}
-                >
-                  {cell}
+    <div>
+      <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
+        <input
+          type="text"
+          value={song}
+          onChange={(e) => setSong(e.target.value)}
+          placeholder="Song"
+          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
+        />
+        <input
+          type="text"
+          value={artist}
+          onChange={(e) => setArtist(e.target.value)}
+          placeholder="Artist"
+          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
+        />
+      </div>
+      <div
+        className="outline-none inline-block font-mono text-ide-text"
+        tabIndex={0}
+        ref={editorRef}
+        onKeyDown={handleKeyDown}
+      >
+        {tabLines.map((tabLine, lineIndex) => (
+          <div key={lineIndex} className="mb-4">
+            {tabLine.map((row, y) => (
+              <div className="flex" key={y}>
+                <div className="text-right text-ide-text-muted pr-2 select-none">
+                  {STRING_NAMES[y]}
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      ))}
+                {row.map((cell, x) => (
+                  <div
+                    key={`${x}-${y}`}
+                    className={`text-center ${
+                      x === cursor.x &&
+                      y === cursor.y &&
+                      lineIndex === cursor.line
+                        ? "bg-ide-highlight"
+                        : ""
+                    } ${
+                      isSelected(x, y, lineIndex) ? "bg-ide-highlight/50" : ""
+                    }`}
+                  >
+                    {cell}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
