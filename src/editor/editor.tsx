@@ -96,8 +96,9 @@ const TabEditor: React.FC = () => {
       case "8":
       case "9":
       case "0":
+        // TOOD: other keys here
+        // TODO: also handle entering multiple chars in a single cell, e.g. track the current cell and reset when it moves
         updateCell(cursor.x, cursor.y, cursor.line, e.key + "-");
-        moveCursor(1, 0, 0, false);
         break;
     }
   };
