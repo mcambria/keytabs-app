@@ -5,7 +5,7 @@ const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 const NUM_STRINGS = STRING_NAMES.length;
 const INITIAL_NUM_COLUMNS = 32;
 
-type Position = { x: number; y: number; line: number };
+type Position = { string: number; time: number; line: number };
 
 const TabEditor: React.FC = () => {
   // Song model
@@ -17,7 +17,7 @@ const TabEditor: React.FC = () => {
     ),
   ]);
 
-  const [cursor, setCursor] = useState<Position>({ x: 0, y: 0, line: 0 });
+  const [cursor, setCursor] = useState<Position>({ string: 0, time: 0, line: 0 });
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,15 +25,15 @@ const TabEditor: React.FC = () => {
   }, []);
 
   const moveCursor = (
-    dx: number,
-    dy: number,
+    dtime: number,
+    dstring: number,
     dline: number,
     shift: boolean, //TODO: just leaving as scaffolding for now
   ) => {
     setCursor((prev) => {
       const newCursor = {
-        x: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.x + dx)),
-        y: Math.max(0, Math.min(NUM_STRINGS - 1, prev.y + dy)),
+        time: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.time + dtime)),
+        string: Math.max(0, Math.min(NUM_STRINGS - 1, prev.string + dstring)),
         line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
       } as Position;
       return newCursor;
@@ -42,9 +42,11 @@ const TabEditor: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
-      // block firefox backspace to go back a page
       case "Backspace":
+        // block firefox backspace to go back a page
         e.preventDefault();
+        updateCell(cursor.time, cursor.string, cursor.line, EMPTY_CELL);
+        moveCursor(-1, 0, 0, false); // TODO: should this really go back in time
         break;
       case "ArrowRight":
         moveCursor(1, 0, 0, e.shiftKey);
@@ -92,18 +94,18 @@ const TabEditor: React.FC = () => {
       case "0":
         // TOOD: other keys here
         // TODO: also handle entering multiple chars in a single cell, e.g. track the current cell and reset when it moves
-        updateCell(cursor.x, cursor.y, cursor.line, e.key + "-");
+        updateCell(cursor.time, cursor.string, cursor.line, e.key + "-");
         break;
     }
   };
 
-  const updateCell = (x: number, y: number, line: number, value: string) => {
+  const updateCell = (time: number, string: number, line: number, value: string) => {
     setTabLines((prev) => {
       const updated = prev.map((tabLine, lineIndex) => {
         if (lineIndex === line) {
           return tabLine.map((row, rowIndex) => {
-            if (rowIndex === y) {
-              return [...row.slice(0, x), value, ...row.slice(x + 1)];
+            if (rowIndex === string) {
+              return [...row.slice(0, time), value, ...row.slice(time + 1)];
             }
             return row;
           });
@@ -114,7 +116,7 @@ const TabEditor: React.FC = () => {
     });
   };
 
-  const isSelected = (x: number, y: number, line: number) => {
+  const isSelected = (time: number, string: number, line: number) => {
     return false;
   };
 
@@ -154,8 +156,8 @@ const TabEditor: React.FC = () => {
                   <div
                     key={`${x}-${y}`}
                     className={`text-center ${
-                      x === cursor.x &&
-                      y === cursor.y &&
+                      x === cursor.time &&
+                      y === cursor.string &&
                       lineIndex === cursor.line
                         ? "bg-ide-highlight"
                         : ""
