@@ -5,7 +5,7 @@ const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 const NUM_STRINGS = STRING_NAMES.length;
 const INITIAL_NUM_COLUMNS = 32;
 
-type Position = { string: number; time: number; line: number };
+type Position = { line: number; time: number; string: number };
 
 const TabEditor: React.FC = () => {
   // Song model
@@ -17,7 +17,7 @@ const TabEditor: React.FC = () => {
     ),
   ]);
 
-  const [cursor, setCursor] = useState<Position>({ string: 0, time: 0, line: 0 });
+  const [cursor, setCursor] = useState<Position>({ line: 0, time: 0, string: 0 });
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,16 +25,16 @@ const TabEditor: React.FC = () => {
   }, []);
 
   const moveCursor = (
+    dline: number,
     dtime: number,
     dstring: number,
-    dline: number,
     shift: boolean, //TODO: just leaving as scaffolding for now
   ) => {
     setCursor((prev) => {
       const newCursor = {
+        line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
         time: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.time + dtime)),
         string: Math.max(0, Math.min(NUM_STRINGS - 1, prev.string + dstring)),
-        line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
       } as Position;
       return newCursor;
     });
@@ -45,23 +45,23 @@ const TabEditor: React.FC = () => {
       case "Backspace":
         // block firefox backspace to go back a page
         e.preventDefault();
-        updateCell(cursor.time, cursor.string, cursor.line, EMPTY_CELL);
-        moveCursor(-1, 0, 0, false); // TODO: should this really go back in time
+        updateCell(cursor.line, cursor.time, cursor.string, EMPTY_CELL);
+        moveCursor(0, -1, 0, false); // TODO: should this really go back in time
         break;
       case "ArrowRight":
-        moveCursor(1, 0, 0, e.shiftKey);
-        e.preventDefault();
-        break;
-      case "ArrowLeft":
-        moveCursor(-1, 0, 0, e.shiftKey);
-        e.preventDefault();
-        break;
-      case "ArrowDown":
         moveCursor(0, 1, 0, e.shiftKey);
         e.preventDefault();
         break;
-      case "ArrowUp":
+      case "ArrowLeft":
         moveCursor(0, -1, 0, e.shiftKey);
+        e.preventDefault();
+        break;
+      case "ArrowDown":
+        moveCursor(0, 0, 1, e.shiftKey);
+        e.preventDefault();
+        break;
+      case "ArrowUp":
+        moveCursor(0, 0, -1, e.shiftKey);
         e.preventDefault();
         break;
       case "Enter":
@@ -78,7 +78,7 @@ const TabEditor: React.FC = () => {
             );
             return newLines;
           });
-          moveCursor(0, 0, 1, false);
+          moveCursor(1, 0, 0, false);
         }
         e.preventDefault();
         break;
@@ -94,12 +94,12 @@ const TabEditor: React.FC = () => {
       case "0":
         // TOOD: other keys here
         // TODO: also handle entering multiple chars in a single cell, e.g. track the current cell and reset when it moves
-        updateCell(cursor.time, cursor.string, cursor.line, e.key + "-");
+        updateCell(cursor.line, cursor.time, cursor.string, e.key + "-");
         break;
     }
   };
 
-  const updateCell = (time: number, string: number, line: number, value: string) => {
+  const updateCell = (line: number, time: number, string: number, value: string) => {
     setTabLines((prev) => {
       const updated = prev.map((tabLine, lineIndex) => {
         if (lineIndex === line) {
@@ -116,7 +116,7 @@ const TabEditor: React.FC = () => {
     });
   };
 
-  const isSelected = (time: number, string: number, line: number) => {
+  const isSelected = (line: number, time: number, string: number) => {
     return false;
   };
 
@@ -146,23 +146,23 @@ const TabEditor: React.FC = () => {
       >
         {tabLines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="mb-4">
-            {tabLine.map((row, y) => (
-              <div className="flex" key={y}>
+            {tabLine.map((row, stringIndex) => (
+              <div className="flex" key={stringIndex}>
                 <div className="text-right text-ide-text-muted pr-2 select-none">
-                  {STRING_NAMES[y]}
+                  {STRING_NAMES[stringIndex]}
                 </div>
                 |
-                {row.map((cell, x) => (
+                {row.map((cell, timeIndex) => (
                   <div
-                    key={`${x}-${y}`}
+                    key={`${timeIndex}-${stringIndex}`}
                     className={`text-center ${
-                      x === cursor.time &&
-                      y === cursor.string &&
-                      lineIndex === cursor.line
+                      lineIndex === cursor.line &&
+                      timeIndex === cursor.time &&
+                      stringIndex === cursor.string
                         ? "bg-ide-highlight"
                         : ""
                     } ${
-                      isSelected(x, y, lineIndex) ? "bg-ide-highlight/50" : ""
+                      isSelected(lineIndex, timeIndex, stringIndex) ? "bg-ide-highlight/50" : ""
                     }`}
                   >
                     {cell}
