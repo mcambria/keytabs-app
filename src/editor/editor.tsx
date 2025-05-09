@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const NUM_STRINGS = 6;
-const NUM_COLUMNS = 32;
 const EMPTY_CELL = "--";
 const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
+const NUM_STRINGS = STRING_NAMES.length;
+const INITIAL_NUM_COLUMNS = 32;
 
 type Position = { x: number; y: number; line: number };
 
@@ -13,12 +13,11 @@ const TabEditor: React.FC = () => {
   const [artist, setArtist] = useState("");
   const [tabLines, setTabLines] = useState([
     Array.from({ length: NUM_STRINGS }, () =>
-      Array.from({ length: NUM_COLUMNS }, () => EMPTY_CELL)
+      Array.from({ length: INITIAL_NUM_COLUMNS }, () => EMPTY_CELL)
     ),
   ]);
 
   const [cursor, setCursor] = useState<Position>({ x: 0, y: 0, line: 0 });
-  const [selectionStart, setSelectionStart] = useState<Position | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -29,19 +28,14 @@ const TabEditor: React.FC = () => {
     dx: number,
     dy: number,
     dline: number,
-    shift: boolean
+    shift: boolean, //TODO: just leaving as scaffolding for now
   ) => {
     setCursor((prev) => {
       const newCursor = {
-        x: Math.max(0, Math.min(NUM_COLUMNS - 1, prev.x + dx)),
+        x: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.x + dx)),
         y: Math.max(0, Math.min(NUM_STRINGS - 1, prev.y + dy)),
         line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
       } as Position;
-      if (shift) {
-        if (!selectionStart) setSelectionStart(prev);
-      } else {
-        setSelectionStart(null);
-      }
       return newCursor;
     });
   };
@@ -77,7 +71,7 @@ const TabEditor: React.FC = () => {
               cursor.line + 1,
               0,
               Array.from({ length: NUM_STRINGS }, () =>
-                Array.from({ length: NUM_COLUMNS }, () => EMPTY_CELL)
+                Array.from({ length: INITIAL_NUM_COLUMNS }, () => EMPTY_CELL)
               )
             );
             return newLines;
@@ -121,17 +115,7 @@ const TabEditor: React.FC = () => {
   };
 
   const isSelected = (x: number, y: number, line: number) => {
-    if (!selectionStart)
-      return x === cursor.x && y === cursor.y && line === cursor.line;
-    const x1 = Math.min(selectionStart.x, cursor.x);
-    const x2 = Math.max(selectionStart.x, cursor.x);
-    const y1 = Math.min(selectionStart.y, cursor.y);
-    const y2 = Math.max(selectionStart.y, cursor.y);
-    const line1 = Math.min(selectionStart.line, cursor.line);
-    const line2 = Math.max(selectionStart.line, cursor.line);
-    return (
-      x >= x1 && x <= x2 && y >= y1 && y <= y2 && line >= line1 && line <= line2
-    );
+    return false;
   };
 
   return (
@@ -159,7 +143,7 @@ const TabEditor: React.FC = () => {
         onKeyDown={handleKeyDown}
       >
         {tabLines.map((tabLine, lineIndex) => (
-          <div key={lineIndex} className="mb-4">
+          <div key={`${lineIndex}`} className="mb-4">
             {tabLine.map((row, y) => (
               <div className="flex" key={y}>
                 <div className="text-right text-ide-text-muted pr-2 select-none">
