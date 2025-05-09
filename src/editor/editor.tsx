@@ -149,6 +149,7 @@ const TabEditor: React.FC = () => {
                 <div className="text-right text-ide-text-muted pr-2 select-none">
                   {STRING_NAMES[y]}
                 </div>
+                |
                 {row.map((cell, x) => (
                   <div
                     key={`${x}-${y}`}
@@ -165,6 +166,7 @@ const TabEditor: React.FC = () => {
                     {cell}
                   </div>
                 ))}
+                |
               </div>
             ))}
           </div>
