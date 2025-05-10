@@ -5,19 +5,19 @@ const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 const NUM_STRINGS = STRING_NAMES.length;
 const INITIAL_NUM_COLUMNS = 32;
 
-type Position = { line: number; time: number; string: number };
+type Position = { line: number; chord: number; string: number };
 
 const TabEditor: React.FC = () => {
   // Song model
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
   const [tabLines, setTabLines] = useState([
-    Array.from({ length: NUM_STRINGS }, () =>
-      Array.from({ length: INITIAL_NUM_COLUMNS }, () => EMPTY_CELL)
+    Array.from({ length: INITIAL_NUM_COLUMNS }, () =>
+      Array.from({ length: NUM_STRINGS }, () => EMPTY_CELL)
     ),
   ]);
 
-  const [cursor, setCursor] = useState<Position>({ line: 0, time: 0, string: 0 });
+  const [cursor, setCursor] = useState<Position>({ line: 0, chord: 0, string: 0 });
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,14 +26,14 @@ const TabEditor: React.FC = () => {
 
   const moveCursor = (
     dline: number,
-    dtime: number,
+    dchord: number,
     dstring: number,
     shift: boolean, //TODO: just leaving as scaffolding for now
   ) => {
     setCursor((prev) => {
       const newCursor = {
         line: Math.max(0, Math.min(tabLines.length - 1, prev.line + dline)),
-        time: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.time + dtime)),
+        chord: Math.max(0, Math.min(INITIAL_NUM_COLUMNS - 1, prev.chord + dchord)),
         string: Math.max(0, Math.min(NUM_STRINGS - 1, prev.string + dstring)),
       } as Position;
       return newCursor;
@@ -45,8 +45,8 @@ const TabEditor: React.FC = () => {
       case "Backspace":
         // block firefox backspace to go back a page
         e.preventDefault();
-        updateCell(cursor.line, cursor.time, cursor.string, EMPTY_CELL);
-        moveCursor(0, -1, 0, false); // TODO: should this really go back in time
+        updateCell(cursor.line, cursor.chord, cursor.string, EMPTY_CELL);
+        moveCursor(0, -1, 0, false); // TODO: should this really go back in chord
         break;
       case "ArrowRight":
         moveCursor(0, 1, 0, e.shiftKey);
@@ -72,8 +72,8 @@ const TabEditor: React.FC = () => {
             newLines.splice(
               cursor.line + 1,
               0,
-              Array.from({ length: NUM_STRINGS }, () =>
-                Array.from({ length: INITIAL_NUM_COLUMNS }, () => EMPTY_CELL)
+              Array.from({ length: INITIAL_NUM_COLUMNS }, () =>
+                Array.from({ length: NUM_STRINGS }, () => EMPTY_CELL)
               )
             );
             return newLines;
@@ -94,20 +94,25 @@ const TabEditor: React.FC = () => {
       case "0":
         // TOOD: other keys here
         // TODO: also handle entering multiple chars in a single cell, e.g. track the current cell and reset when it moves
-        updateCell(cursor.line, cursor.time, cursor.string, e.key + "-");
+        updateCell(cursor.line, cursor.chord, cursor.string, e.key + "-");
         break;
     }
   };
 
-  const updateCell = (line: number, time: number, string: number, value: string) => {
+  const updateCell = (line: number, chord: number, string: number, value: string) => {
     setTabLines((prev) => {
       const updated = prev.map((tabLine, lineIndex) => {
         if (lineIndex === line) {
-          return tabLine.map((row, rowIndex) => {
-            if (rowIndex === string) {
-              return [...row.slice(0, time), value, ...row.slice(time + 1)];
+          return tabLine.map((chordData, chordIndex) => {
+            if (chordIndex === chord) {
+              return chordData.map((stringValue, stringIndex) => {
+                if (stringIndex === string) {
+                  return value;
+                }
+                return stringValue;
+              });
             }
-            return row;
+            return chordData;
           });
         }
         return tabLine;
@@ -116,7 +121,7 @@ const TabEditor: React.FC = () => {
     });
   };
 
-  const isSelected = (line: number, time: number, string: number) => {
+  const isSelected = (line: number, chord: number, string: number) => {
     return false;
   };
 
@@ -145,32 +150,40 @@ const TabEditor: React.FC = () => {
         onKeyDown={handleKeyDown}
       >
         {tabLines.map((tabLine, lineIndex) => (
-          <div key={`${lineIndex}`} className="mb-4">
-            {tabLine.map((row, stringIndex) => (
-              <div className="flex" key={stringIndex}>
-                <div className="text-right text-ide-text-muted pr-2 select-none">
-                  {STRING_NAMES[stringIndex]}
+          <div key={`${lineIndex}`} className="flex mb-4">
+            <div className="flex-col">
+              {STRING_NAMES.map((stringName, stringIndex) => (
+                // -2 relative to start of the actual tab
+                <div key={`${lineIndex}--2-${stringIndex}`} className="flex text-right text-ide-text-muted select-none">
+                  {stringName}
                 </div>
-                |
-                {row.map((cell, timeIndex) => (
-                  <div
-                    key={`${timeIndex}-${stringIndex}`}
-                    className={`text-center ${
-                      lineIndex === cursor.line &&
-                      timeIndex === cursor.time &&
-                      stringIndex === cursor.string
-                        ? "bg-ide-highlight"
-                        : ""
-                    } ${
-                      isSelected(lineIndex, timeIndex, stringIndex) ? "bg-ide-highlight/50" : ""
-                    }`}
-                  >
-                    {cell}
+              ))}
+            </div>
+            <div className="flex-col">
+              {STRING_NAMES.map((_, stringIndex) => (
+                // -1 relative to start of the actual tab
+                <div key={`${lineIndex}-1-${stringIndex}`} className="flex text-center">
+                  |
+                </div>
+              ))}
+            </div>
+            {tabLine.map((chord, chordIndex) => (
+              <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
+                {chord.map((stringValue, stringIndex) => (
+                  <div key={`${lineIndex}-${chordIndex}-${stringIndex}`} className="flex text-center">
+                    {stringValue}
                   </div>
                 ))}
-                |
               </div>
             ))}
+            <div className="flex-col">
+              {STRING_NAMES.map((_, stringIndex) => (
+                // +1 relative to start of the actual tab
+                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`} className="flex text-center">
+                  |
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
