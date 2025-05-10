@@ -26,7 +26,7 @@ const normalizeChordLength = (chord: Chord) => {
   const maxLength = Math.max(Math.max(...stripped.map((str) => str.length)), 1);
 
   // Pad each string to that length, counting only real characters
-  return stripped.map(str => str.padEnd(maxLength, '-'));
+  return stripped.map((str) => str.padEnd(maxLength, "-"));
 };
 
 export class TabModel {
@@ -38,6 +38,10 @@ export class TabModel {
 
   getLines(): TabLines {
     return this.lines;
+  }
+
+  setLines(lines: TabLines): void {
+    this.lines = lines;
   }
 
   getStringValue(position: Position): string {

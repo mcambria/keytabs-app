@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TabModel,
   Position,
@@ -9,10 +9,32 @@ import {
 
 const TabEditor: React.FC = () => {
   // Song model
-  const [song, setSong] = useState("");
-  const [artist, setArtist] = useState("");
-  const [model] = useState(new TabModel());
+  const [song, setSong] = useState(() => localStorage.getItem("tabSong") || "");
+  const [artist, setArtist] = useState(
+    () => localStorage.getItem("tabArtist") || ""
+  );
+  const [model] = useState(() => {
+    const newModel = new TabModel();
+    const saved = localStorage.getItem("tabLines");
+    if (saved) {
+      newModel.setLines(JSON.parse(saved));
+    }
+    return newModel;
+  });
   const [tabLines, setTabLines] = useState(model.getLines());
+
+  // Save state when it changes
+  useEffect(() => {
+    localStorage.setItem("tabSong", song);
+  }, [song]);
+
+  useEffect(() => {
+    localStorage.setItem("tabArtist", artist);
+  }, [artist]);
+
+  useEffect(() => {
+    localStorage.setItem("tabLines", JSON.stringify(tabLines));
+  }, [tabLines]);
 
   const [cursor, setCursor] = useState<Position>({
     line: 0,
@@ -21,11 +43,6 @@ const TabEditor: React.FC = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
-
-  const editorRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    editorRef.current?.focus();
-  }, []);
 
   const handleFocus = (e: React.FocusEvent) => {
     // Only set focus if we're not already handling it in a click
@@ -216,7 +233,7 @@ const TabEditor: React.FC = () => {
   };
 
   return (
-    <div onClick={() => editorRef.current?.focus()}>
+    <div>
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
@@ -236,7 +253,6 @@ const TabEditor: React.FC = () => {
       <div
         className="outline-none inline-block font-mono text-ide-text"
         tabIndex={0}
-        ref={editorRef}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
