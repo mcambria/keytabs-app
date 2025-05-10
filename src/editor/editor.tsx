@@ -170,7 +170,16 @@ const TabEditor: React.FC = () => {
             {tabLine.map((chord, chordIndex) => (
               <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
                 {chord.map((stringValue, stringIndex) => (
-                  <div key={`${lineIndex}-${chordIndex}-${stringIndex}`} className="flex text-center">
+                  <div 
+                    key={`${lineIndex}-${chordIndex}-${stringIndex}`} 
+                    className={`flex text-center ${
+                      lineIndex === cursor.line &&
+                      chordIndex === cursor.chord &&
+                      stringIndex === cursor.string
+                        ? "bg-ide-highlight"
+                        : ""
+                    }`}
+                  >
                     {stringValue}
                   </div>
                 ))}
