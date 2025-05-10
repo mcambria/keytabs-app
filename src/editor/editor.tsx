@@ -20,11 +20,41 @@ const TabEditor: React.FC = () => {
     string: 0,
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [hasFocus, setHasFocus] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     editorRef.current?.focus();
   }, []);
+
+  const handleFocus = (e: React.FocusEvent) => {
+    // Only set focus if we're not already handling it in a click
+    if (!e.target?.closest("[data-cell]")) {
+      setHasFocus(true);
+    }
+  };
+
+  const handleBlur = () => {
+    setHasFocus(false);
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    console.log("handling click");
+    const target = e.target as HTMLElement;
+    const cell = target.closest("[data-cell]");
+    if (cell) {
+      const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
+      const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
+      const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
+      setCursor({
+        line: lineIndex,
+        chord: chordIndex,
+        string: stringIndex,
+      });
+      // Set focus after cursor position is updated
+      setHasFocus(true);
+    }
+  };
 
   const moveCursor = (
     dline: number,
@@ -186,7 +216,7 @@ const TabEditor: React.FC = () => {
   };
 
   return (
-    <div>
+    <div onClick={() => editorRef.current?.focus()}>
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
@@ -208,6 +238,9 @@ const TabEditor: React.FC = () => {
         tabIndex={0}
         ref={editorRef}
         onKeyDown={handleKeyDown}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        onClick={handleClick}
       >
         {tabLines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="flex mb-4">
@@ -238,11 +271,16 @@ const TabEditor: React.FC = () => {
                 {chord.map((stringValue, stringIndex) => (
                   <div
                     key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                    data-line={lineIndex}
+                    data-chord={chordIndex}
+                    data-string={stringIndex}
+                    data-cell
                     className={`flex text-center ${
                       lineIndex === cursor.line &&
                       chordIndex === cursor.chord &&
-                      stringIndex === cursor.string
-                        ? "bg-pink-500"
+                      stringIndex === cursor.string &&
+                      hasFocus
+                        ? "bg-pink-600"
                         : ""
                     }`}
                   >
