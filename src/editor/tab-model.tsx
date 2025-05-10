@@ -1,0 +1,74 @@
+export const EMPTY_NOTE = "-";
+export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
+export const NUM_STRINGS = STRING_NAMES.length;
+export const INITIAL_NUM_COLUMNS = 32;
+
+export interface Position {
+  line: number;
+  chord: number;
+  string: number;
+}
+
+export type TabLines = string[][][];
+export type Chord = string[];
+
+const defaultLine = () =>
+  Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
+
+const defaultChord = () =>
+  Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
+
+const normalizeChordLength = (chord: Chord) => {
+  // TODO: this is going to have a problem with - in front
+  const stripped = chord.map((str) => str.replace(/-/g, ""));
+
+  // Find the maximum number of non-dash characters
+  const maxLength = Math.max(Math.max(...stripped.map((str) => str.length)), 1);
+
+  // Pad each string to that length, counting only real characters
+  return stripped.map(str => str.padEnd(maxLength, '-'));
+};
+
+export class TabModel {
+  private lines: TabLines;
+
+  constructor() {
+    this.lines = [defaultLine()];
+  }
+
+  getLines(): TabLines {
+    return this.lines;
+  }
+
+  getStringValue(position: Position): string {
+    return this.lines[position.line][position.chord][position.string];
+  }
+
+  getChordValue(position: Position): Chord {
+    return this.lines[position.line][position.chord];
+  }
+
+  setStringValue(position: Position, value: string): void {
+    let chord = this.lines[position.line][position.chord];
+    chord[position.string] = value;
+
+    this.setChordValue(position, chord);
+  }
+
+  setChordValue(position: Position, value: Chord): void {
+    value = normalizeChordLength(value);
+    this.lines[position.line][position.chord] = value;
+  }
+
+  insertLine(position: Position): void {
+    this.lines.splice(position.line + 1, 0, defaultLine());
+  }
+
+  insertChord(position: Position, value: Chord = defaultChord()): void {
+    this.lines[position.line].splice(position.chord + 1, 0, value);
+  }
+
+  createMutableCopy(): TabLines {
+    return this.lines.map((line) => line.map((chord) => [...chord]));
+  }
+}

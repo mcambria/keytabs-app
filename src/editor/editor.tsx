@@ -1,28 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
-
-const EMPTY_CELL = "--";
-const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
-const NUM_STRINGS = STRING_NAMES.length;
-const INITIAL_NUM_COLUMNS = 32;
-
-interface Position {
-  line: number;
-  chord: number;
-  string: number;
-}
-
-type TabLines = string[][][];
-
-const defaultLine = () =>
-  Array.from({ length: INITIAL_NUM_COLUMNS }, () =>
-    Array.from({ length: NUM_STRINGS }, () => EMPTY_CELL)
-  );
+import {
+  TabModel,
+  Position,
+  EMPTY_NOTE,
+  STRING_NAMES,
+  NUM_STRINGS,
+} from "./tab-model";
 
 const TabEditor: React.FC = () => {
   // Song model
   const [song, setSong] = useState("");
   const [artist, setArtist] = useState("");
-  const [tabLines, setTabLines] = useState<TabLines>([defaultLine()]);
+  const [model] = useState(new TabModel());
+  const [tabLines, setTabLines] = useState(model.getLines());
 
   const [cursor, setCursor] = useState<Position>({
     line: 0,
@@ -90,11 +80,18 @@ const TabEditor: React.FC = () => {
   const commitEdit = () => {
     setIsEditing(false);
   };
+
   const handleInputKey = (key: string) => {
-    if (!isEditing) {
-      startEditing();
+    let currentValue = "";
+    if (isEditing) {
+      currentValue = model.getStringValue(cursor);
     }
-    // setCurrentEditValue((prev) => prev + key);
+
+    const newValue = currentValue + key;
+    model.setStringValue(cursor, newValue);
+    setTabLines(model.createMutableCopy());
+
+    startEditing();
   };
 
   const handleNavigationKey = (e: React.KeyboardEvent) => {
@@ -116,7 +113,7 @@ const TabEditor: React.FC = () => {
         break;
       case "ArrowUp":
         if (e.ctrlKey) {
-          // move down 1 line
+          // move up 1 line
           moveCursor(-1, 0, 0, e.shiftKey);
         } else {
           moveCursor(0, 0, -1, e.shiftKey);
@@ -125,29 +122,31 @@ const TabEditor: React.FC = () => {
       case "Enter":
         if (e.shiftKey) {
           // Create a new line
-          setTabLines((prev) => {
-            const newLines = [...prev];
-            newLines.splice(cursor.line + 1, 0, defaultLine());
-            return newLines;
-          });
-          moveCursor(1, 0, 0, false);
+          model.insertLine(cursor);
+          setTabLines(model.createMutableCopy());
         } else {
           commitEdit();
         }
         break;
       case "Backspace":
         if (isEditing) {
-          // setCurrentEditValue((prev) => prev.slice(0, -1));
+          const currentValue = model.getStringValue(cursor);
+          const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
+          model.setStringValue(cursor, newValue);
+          setTabLines(model.createMutableCopy());
         } else {
-          updateCell(cursor.line, cursor.chord, cursor.string, EMPTY_CELL);
+          model.setStringValue(cursor, EMPTY_NOTE);
+          setTabLines(model.createMutableCopy());
           moveCursor(0, -1, 0, false);
         }
         break;
       case "Delete":
         if (isEditing) {
-          // setCurrentEditValue("");
+          model.setStringValue(cursor, EMPTY_NOTE);
+          setTabLines(model.createMutableCopy());
         } else {
-          updateCell(cursor.line, cursor.chord, cursor.string, EMPTY_CELL);
+          model.setStringValue(cursor, EMPTY_NOTE);
+          setTabLines(model.createMutableCopy());
         }
         break;
       case "Escape":
@@ -180,33 +179,6 @@ const TabEditor: React.FC = () => {
       e.preventDefault();
       handleInputKey(e.key);
     }
-  };
-
-  const updateCell = (
-    line: number,
-    chord: number,
-    string: number,
-    value: string
-  ) => {
-    setTabLines((prev) => {
-      const updated = prev.map((tabLine, lineIndex) => {
-        if (lineIndex === line) {
-          return tabLine.map((chordData, chordIndex) => {
-            if (chordIndex === chord) {
-              return chordData.map((stringValue, stringIndex) => {
-                if (stringIndex === string) {
-                  return value;
-                }
-                return stringValue;
-              });
-            }
-            return chordData;
-          });
-        }
-        return tabLine;
-      });
-      return updated;
-    });
   };
 
   const isSelected = (line: number, chord: number, string: number) => {
@@ -270,11 +242,11 @@ const TabEditor: React.FC = () => {
                       lineIndex === cursor.line &&
                       chordIndex === cursor.chord &&
                       stringIndex === cursor.string
-                        ? "bg-ide-highlight"
+                        ? "bg-pink-500"
                         : ""
                     }`}
                   >
-                    {stringValue}
+                    {stringValue + EMPTY_NOTE}
                   </div>
                 ))}
               </div>
