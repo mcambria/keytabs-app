@@ -48,6 +48,9 @@ const TabEditor: React.FC = () => {
         updateCell(cursor.line, cursor.chord, cursor.string, EMPTY_CELL);
         moveCursor(0, -1, 0, false); // TODO: should this really go back in chord
         break;
+      case "Delete":
+        updateCell(cursor.line, cursor.chord, cursor.string, EMPTY_CELL);
+        break;
       case "ArrowRight":
         moveCursor(0, 1, 0, e.shiftKey);
         e.preventDefault();
