@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TabModel, Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "./tab-model";
+import { TabModel, Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "../models/tab";
 
 const CURRENT_SONG_KEY = "currentsong";
 const CURRENT_ARTIST_KEY = "currentartist";
@@ -121,8 +121,7 @@ const TabEditor: React.FC = () => {
         );
       }
       // bottom to top
-      else;
-      {
+      else {
         setSelection(
           new Range(
             new Position(position.line, 0, 0),
@@ -296,10 +295,6 @@ const TabEditor: React.FC = () => {
     }
   };
 
-  const isSelected = (line: number, chord: number, string: number) => {
-    return false;
-  };
-
   return (
     <div>
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
@@ -356,17 +351,16 @@ const TabEditor: React.FC = () => {
                     data-string={stringIndex}
                     data-cell
                     className={`flex text-center ${
-                      selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus
-                        ? isEditing
-                          ? "relative"
-                          : "bg-pink-600"
+                      selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
+                        ? "bg-pink-600"
                         : ""
                     }`}
                   >
                     <span className="relative">
                       {stringValue}
                       {isEditing &&
-                        selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
+                        // can only be in editing mode if the selection is just one long
+                        selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
                         hasFocus && (
                           <span
                             className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${

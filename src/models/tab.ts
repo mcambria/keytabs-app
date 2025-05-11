@@ -5,7 +5,13 @@ export const EMPTY_NOTE = "-";
 export const BAR_DELIMITER = "|";
 const BAR_LINE = Array.from({ length: NUM_STRINGS }, () => BAR_DELIMITER);
 
-export class Position {
+export interface IPosition {
+  line: number,
+  chord: number,
+  string: number
+}
+
+export class Position implements IPosition{
   line: number;
   chord: number;
   string: number;
@@ -19,21 +25,46 @@ export class Position {
   }
 
   equals(position: Position): boolean {
-    return this.line == position.line &&
-      this.chord == position.chord &&
-      this.string == position.string;
+    return this.line == position.line && this.chord == position.chord && this.string == position.string;
   }
 
   isChordGreaterThanOrEqualTo(position: Position): boolean {
-    return this.line >= position.line &&
-      this.chord >= position.chord &&
-      this.string >= position.string;
+    // check if they are on different lines first
+    if (position.line != this.line) {
+      return position.line > this.line;
+    }
+    // to the right or same on this line
+    return position.chord >= this.chord;
   }
 
   isChordLessThanOrEqualTo(position: Position): boolean {
-    return this.line <= position.line &&
-      this.chord <= position.chord &&
-      this.string <= position.string;
+    // check if they are on different lines first
+    if (position.line != this.line) {
+      return position.line < this.line;
+    }
+    // to the left or same on this line
+    return position.chord <= this.chord;
+  }
+
+  isGreaterThanOrEqualTo(position: Position): boolean {
+    if (!this.isChordGreaterThanOrEqualTo(position)) {
+      return false;
+    }
+    // there are on the same line so need to compare the strings
+    return this.string >= position.string;
+  }
+
+  isLessThanOrEqualTo(position: Position): boolean {
+    if (!this.isChordLessThanOrEqualTo(position)) {
+      return false;
+    }
+    // there are on the same line so need to compare the strings
+    return this.string <= position.string;
+  }
+
+  // for debugging
+  toString(): string {
+    return JSON.stringify(this as IPosition);
   }
 }
 
@@ -58,18 +89,17 @@ export class Range {
   }
 
   contains(position: Position) {
-    return position.isChordGreaterThanOrEqualTo(this.start) && position.isChordLessThanOrEqualTo(this.end);
+    let doesContain = position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
+    console.log(`Range: { start: ${this.start.toString()}, end: ${this.end.toString}}, Position: ${position.toString()}, Contains: ${doesContain}`);
   }
 }
 
 export type TabLines = string[][][];
 export type Chord = string[];
 
-const defaultLine = () =>
-  Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
+const defaultLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
 
-const defaultChord = () =>
-  Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
+const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
 
 const normalizeChordLength = (chord: Chord) => {
   // TODO: this is going to have a problem with - in front
