@@ -11,7 +11,7 @@ export interface IPosition {
   string: number
 }
 
-export class Position implements IPosition{
+export class Position implements IPosition {
   line: number;
   chord: number;
   string: number;
@@ -90,7 +90,8 @@ export class Range {
 
   contains(position: Position) {
     let doesContain = position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
-    console.log(`Range: { start: ${this.start.toString()}, end: ${this.end.toString}}, Position: ${position.toString()}, Contains: ${doesContain}`);
+    console.log(`Range: { start: ${this.start.toString()}, end: ${this.end.toString()}}, Position: ${position.toString()}, Contains: ${doesContain}`);
+    return doesContain;
   }
 }
 
@@ -159,6 +160,13 @@ export class TabModel {
 
   insertLine(position: Position): void {
     this.lines.splice(position.line + 1, 0, defaultLine());
+  }
+
+  deleteLine(position: Position): void {
+    if (this.lines.length == 1) {
+      return;
+    }
+    this.lines.splice(position.line, 1);
   }
 
   insertChord(position: Position, value: Chord = defaultChord()): void {

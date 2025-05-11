@@ -95,7 +95,7 @@ const TabEditor: React.FC = () => {
         setSelection(
           new Range(
             new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
-            new Position(position.line, position.chord, NUM_STRINGS)
+            new Position(position.line, position.chord, NUM_STRINGS - 1)
           )
         );
       }
@@ -104,7 +104,7 @@ const TabEditor: React.FC = () => {
         setSelection(
           new Range(
             new Position(position.line, position.chord, 0),
-            new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS)
+            new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS - 1)
           )
         );
       }
@@ -267,6 +267,9 @@ const TabEditor: React.FC = () => {
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
             model.deleteChord(selection.start);
+          } else if (e.ctrlKey) {
+            model.deleteLine(selection.start);
+            moveCursor(0, 0, 0, false);
           } else {
             model.setStringValue(selection.start, EMPTY_NOTE);
           }
