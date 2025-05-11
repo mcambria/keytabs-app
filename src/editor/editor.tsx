@@ -80,29 +80,53 @@ const TabEditor: React.FC = () => {
       // TODO: I'm not actually sure what this means, don't do anything for now
       return;
     }
-    if (clickedPosition.equals(initialSelectionPosition)) {
-      // we're on the starting cell, just one cell being selected is okay
-      setSelection(new Range(clickedPosition));
-      return;
+    updateSelection(clickedPosition);
+  };
+
+  const updateSelection = (position: Position) => {
+    // if we are on the same cell, just select that cell
+    if (position.equals(initialSelectionPosition)) {
+      setSelection(new Range(position));
     }
-
-    // selecting from top/left to bottom/right
-
-    if (clickedPosition.line === initialSelectionPosition.line) {
-      if (clickedPosition.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
+    // if we are on the same line, select chords within that line
+    else if (position.line === initialSelectionPosition.line) {
+      // selecting left to right
+      if (position.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
         setSelection(
           new Range(
             new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
-            new Position(clickedPosition.line, clickedPosition.chord, NUM_STRINGS)
+            new Position(position.line, position.chord, NUM_STRINGS)
           )
         );
       }
-      // selecting from bottom/right to top/left
+      // selecting right to left
       else {
         setSelection(
           new Range(
-            new Position(clickedPosition.line, clickedPosition.chord, 0),
+            new Position(position.line, position.chord, 0),
             new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS)
+          )
+        );
+      }
+    }
+    // we are selecting entire lines
+    else {
+      // selecting top to bottom
+      if (position.line > initialSelectionPosition.line) {
+        setSelection(
+          new Range(
+            new Position(initialSelectionPosition.line, 0, 0),
+            new Position(position.line, tabLines[position.line].length - 1, NUM_STRINGS)
+          )
+        );
+      }
+      // bottom to top
+      else;
+      {
+        setSelection(
+          new Range(
+            new Position(position.line, 0, 0),
+            new Position(initialSelectionPosition.line, tabLines[initialSelectionPosition.line].length - 1, NUM_STRINGS)
           )
         );
       }
