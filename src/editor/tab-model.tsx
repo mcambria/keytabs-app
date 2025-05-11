@@ -1,7 +1,9 @@
-export const EMPTY_NOTE = "-";
 export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = STRING_NAMES.length;
 export const INITIAL_NUM_COLUMNS = 32;
+export const EMPTY_NOTE = "-";
+export const BAR_DELIMITER = '|';
+const BAR_LINE =  Array.from({ length: NUM_STRINGS }, () => BAR_DELIMITER);
 
 export interface Position {
   line: number;
@@ -64,11 +66,22 @@ export class TabModel {
     this.lines[position.line][position.chord] = value;
   }
 
+  insertBarLine(position: Position): void {
+    // copied to skip normalization, bar line is special
+    this.lines[position.line].splice(position.chord + 1, 0, BAR_LINE);
+  }
+
+  deleteChord(position: Position): void {
+    const line = this.lines[position.line];
+    line.splice(position.chord, 1);
+  }
+
   insertLine(position: Position): void {
     this.lines.splice(position.line + 1, 0, defaultLine());
   }
 
   insertChord(position: Position, value: Chord = defaultChord()): void {
+    value = normalizeChordLength(value);
     this.lines[position.line].splice(position.chord + 1, 0, value);
   }
 

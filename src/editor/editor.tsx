@@ -5,6 +5,7 @@ import {
   EMPTY_NOTE,
   STRING_NAMES,
   NUM_STRINGS,
+  BAR_DELIMITER,
 } from "./tab-model";
 
 const TabEditor: React.FC = () => {
@@ -22,6 +23,7 @@ const TabEditor: React.FC = () => {
     return newModel;
   });
   const [tabLines, setTabLines] = useState(model.getLines());
+  const updateTabLines = () => setTabLines(model.createMutableCopy());
 
   // Save state when it changes
   useEffect(() => {
@@ -128,7 +130,17 @@ const TabEditor: React.FC = () => {
     setIsEditing(false);
   };
 
-  const handleInputKey = (key: string) => {
+  const handleInputKey = (e: React.KeyboardEvent) => {
+    const key = e.key;
+    if (key == "|") {
+      if (!e.shiftKey) {
+        return;
+      }
+      model.insertBarLine(cursor);
+      updateTabLines();
+      return;
+    }
+
     let currentValue = "";
     if (isEditing) {
       currentValue = model.getStringValue(cursor);
@@ -136,13 +148,14 @@ const TabEditor: React.FC = () => {
 
     const newValue = currentValue + key;
     model.setStringValue(cursor, newValue);
-    setTabLines(model.createMutableCopy());
+    updateTabLines();
 
     startEditing();
   };
 
   const handleNavigationKey = (e: React.KeyboardEvent) => {
     e.preventDefault();
+    const currentValue = model.getStringValue(cursor);
     switch (e.key) {
       case "ArrowRight":
         moveCursor(0, e.ctrlKey ? 8 : 1, 0, e.shiftKey);
@@ -167,37 +180,53 @@ const TabEditor: React.FC = () => {
         }
         break;
       case "Enter":
-        if (e.shiftKey) {
+        if (e.ctrlKey) {
           // Create a new line
           model.insertLine(cursor);
-          setTabLines(model.createMutableCopy());
-        } else {
+          updateTabLines();
+        }
+        if (e.shiftKey) {
+          model.insertChord(cursor);
+          updateTabLines();
+        }
+        else {
           commitEdit();
         }
         break;
       case "Backspace":
         if (isEditing) {
-          const currentValue = model.getStringValue(cursor);
           const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
           model.setStringValue(cursor, newValue);
-          setTabLines(model.createMutableCopy());
+          updateTabLines();
         } else {
-          model.setStringValue(cursor, EMPTY_NOTE);
-          setTabLines(model.createMutableCopy());
+          if (currentValue == BAR_DELIMITER || e.shiftKey) {
+            model.deleteChord(cursor);
+          }
+          else {
+            model.setStringValue(cursor, EMPTY_NOTE);
+          }
+          updateTabLines();
           moveCursor(0, -1, 0, false);
         }
         break;
       case "Delete":
         if (isEditing) {
-          model.setStringValue(cursor, EMPTY_NOTE);
-          setTabLines(model.createMutableCopy());
+          const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
+          model.setStringValue(cursor, newValue);
+          updateTabLines();
         } else {
+          if (currentValue == BAR_DELIMITER || e.shiftKey) {
+            model.deleteChord(cursor);
+          }
+          else {
+            model.setStringValue(cursor, EMPTY_NOTE);
+          }
           model.setStringValue(cursor, EMPTY_NOTE);
-          setTabLines(model.createMutableCopy());
+          updateTabLines();
         }
         break;
       case "Escape":
-        setIsEditing(false);
+        commitEdit();
         break;
     }
   };
@@ -220,11 +249,10 @@ const TabEditor: React.FC = () => {
       return;
     }
 
-    // Handle input keys (numbers)
-    // TODO: add other keys for notation stuff
-    if (/^[0-9]$/.test(e.key)) {
+    // Handle input keys (numbers and special characters)
+    if (/^[0-9]$/.test(e.key) || ["|", "h", "p"].includes(e.key)) {
       e.preventDefault();
-      handleInputKey(e.key);
+      handleInputKey(e);
     }
   };
 
@@ -295,12 +323,12 @@ const TabEditor: React.FC = () => {
                       lineIndex === cursor.line &&
                       chordIndex === cursor.chord &&
                       stringIndex === cursor.string &&
-                      hasFocus
+                      hasFocus // TODO: should I use an insert style cursor for edit mode, and a block style cursor for not?
                         ? "bg-pink-600"
                         : ""
                     }`}
                   >
-                    {stringValue + EMPTY_NOTE}
+                    {stringValue + (stringValue === BAR_DELIMITER ? '' : EMPTY_NOTE)}
                   </div>
                 ))}
               </div>
