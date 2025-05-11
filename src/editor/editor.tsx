@@ -11,9 +11,7 @@ import {
 const TabEditor: React.FC = () => {
   // Song model
   const [song, setSong] = useState(() => localStorage.getItem("tabSong") || "");
-  const [artist, setArtist] = useState(
-    () => localStorage.getItem("tabArtist") || ""
-  );
+  const [artist, setArtist] = useState(() => localStorage.getItem("tabArtist") || "");
   const [model] = useState(() => {
     const newModel = new TabModel();
     const saved = localStorage.getItem("tabLines");
@@ -26,6 +24,7 @@ const TabEditor: React.FC = () => {
   const updateTabLines = () => setTabLines(model.createMutableCopy());
 
   // Save state when it changes
+  // TODO: this seems too frequent, it would be better to catch page reloads and auto-save if there's been any changes after a pause in typing or after 15s
   useEffect(() => {
     localStorage.setItem("tabSong", song);
   }, [song]);
@@ -46,30 +45,46 @@ const TabEditor: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
 
-  const handleFocus = (e: React.FocusEvent) => {
-    // Only set focus if we're not already handling it in a click
-    if (!e.target?.closest("[data-cell]")) {
-      setHasFocus(true);
+  const handleFocus = () => {
+    console.log("focus");
+    // wait 100ms to try to let the mouse handlers go first and update cursor position
+    setTimeout(() => setHasFocus(true), 100);
+  };
+
+  const positionFromTarget = (target: HTMLElement): Position | null => {
+    const cell = target.closest("[data-cell]");
+    if (!cell) {
+      return null;
     }
+
+    const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
+    const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
+    const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
+    return {
+      line: lineIndex,
+      chord: chordIndex,
+      string: stringIndex,
+    };
+  };
+
+  const handleMouseDown = () => {
+    commitEdit();
+    console.log("mousedown");
+  };
+
+  const handleMouseUp = () => {
+    console.log("mouseup");
   };
 
   const handleBlur = () => {
+    console.log("blur");
     setHasFocus(false);
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    commitEdit();
-    const target = e.target as HTMLElement;
-    const cell = target.closest("[data-cell]");
-    if (cell) {
-      const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
-      const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
-      const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
-      setCursor({
-        line: lineIndex,
-        chord: chordIndex,
-        string: stringIndex,
-      });
+    const clickedPosition = positionFromTarget(e.target as HTMLElement);
+    if (clickedPosition) {
+      setCursor(clickedPosition);
       // Set focus after cursor position is updated
       setHasFocus(true);
     }
@@ -274,11 +289,13 @@ const TabEditor: React.FC = () => {
         />
       </div>
       <div
-        className="outline-none inline-block font-mono text-ide-text"
+        className="outline-none inline-block font-mono text-ide-text select-none"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
         onBlur={handleBlur}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
         onClick={handleClick}
       >
         {tabLines.map((tabLine, lineIndex) => (
@@ -332,7 +349,11 @@ const TabEditor: React.FC = () => {
                         chordIndex === cursor.chord &&
                         stringIndex === cursor.string &&
                         hasFocus && (
-                        <span className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${stringValue === EMPTY_NOTE ? "left-0" : ""}`} />
+                          <span
+                            className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${
+                              stringValue === EMPTY_NOTE ? "left-0" : ""
+                            }`}
+                          />
                         )}
                       {stringValue === BAR_DELIMITER ? "" : EMPTY_NOTE}
                     </span>
