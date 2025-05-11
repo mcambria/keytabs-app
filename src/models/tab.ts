@@ -28,52 +28,43 @@ export class Position implements IPosition {
     return this.line == position.line && this.chord == position.chord && this.string == position.string;
   }
 
-  isChordGreaterThanOrEqualTo(position: Position): boolean {
-    // check if they are on different lines first
-    if (position.line != this.line) {
-      return position.line > this.line;
+  isChordGreaterThan(position: Position): boolean {
+    if (this.line != position.line) {
+      return this.line > position.line;
     }
-    // to the right or same on this line
-    return position.chord >= this.chord;
+    return this.chord > position.chord;
+  }
+
+  isChordGreaterThanOrEqualTo(position: Position): boolean {
+    return this.equals(position) || this.isChordGreaterThan(position);
   }
 
   isChordLessThanOrEqualTo(position: Position): boolean {
-    // check if they are on different lines first
-    if (position.line != this.line) {
-      return position.line < this.line;
+    return this.equals(position) || !this.isChordGreaterThan(position);
+  }
+
+  isGreaterThan(position: Position): boolean {
+    if (this.line != position.line) {
+      return this.line > position.line;
     }
-    // to the left or same on this line
-    return position.chord <= this.chord;
+    if (this.chord != position.chord) {
+      return this.chord > position.chord;
+    }
+    return this.string > position.string;
   }
 
   isGreaterThanOrEqualTo(position: Position): boolean {
-    if (!this.isChordGreaterThanOrEqualTo(position)) {
-      return false;
-    }
-    // there are on the same line so need to compare the strings
-    return this.string >= position.string;
+    return this.equals(position) || this.isGreaterThan(position);
   }
 
   isLessThanOrEqualTo(position: Position): boolean {
-    if (!this.isChordLessThanOrEqualTo(position)) {
-      return false;
-    }
-    // there are on the same line so need to compare the strings
-    return this.string <= position.string;
-  }
-
-  // for debugging
-  toString(): string {
-    return JSON.stringify(this as IPosition);
+    return this.equals(position) || !this.isGreaterThan(position);
   }
 }
 
 export class Range {
   start: Position;
   end: Position;
-
-  // TODO: we should consider a property setter here for auto-fixing start and end positions
-  // or consider enforcing immutability with getter-only fields
 
   constructor();
   // single position constructor
@@ -89,9 +80,7 @@ export class Range {
   }
 
   contains(position: Position) {
-    let doesContain = position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
-    console.log(`Range: { start: ${this.start.toString()}, end: ${this.end.toString()}}, Position: ${position.toString()}, Contains: ${doesContain}`);
-    return doesContain;
+    return position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
   }
 }
 
