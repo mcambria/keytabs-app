@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   TabModel,
   Position,
+  Range,
   EMPTY_NOTE,
   STRING_NAMES,
   NUM_STRINGS,
@@ -14,8 +15,12 @@ const CURRENT_TABLINES_KEY = "currenttablines";
 
 const TabEditor: React.FC = () => {
   // Song model
-  const [song, setSong] = useState(() => localStorage.getItem(CURRENT_SONG_KEY) || "");
-  const [artist, setArtist] = useState(() => localStorage.getItem(CURRENT_ARTIST_KEY) || "");
+  const [song, setSong] = useState(
+    () => localStorage.getItem(CURRENT_SONG_KEY) || ""
+  );
+  const [artist, setArtist] = useState(
+    () => localStorage.getItem(CURRENT_ARTIST_KEY) || ""
+  );
   const [model] = useState(() => {
     const newModel = new TabModel();
     const saved = localStorage.getItem(CURRENT_TABLINES_KEY);
@@ -32,27 +37,27 @@ const TabEditor: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(CURRENT_SONG_KEY, song);
   }, [song]);
-
   useEffect(() => {
     localStorage.setItem(CURRENT_ARTIST_KEY, artist);
   }, [artist]);
-
   useEffect(() => {
     localStorage.setItem(CURRENT_TABLINES_KEY, JSON.stringify(tabLines));
   }, [tabLines]);
 
-  const [cursor, setCursor] = useState<Position>({
-    line: 0,
-    chord: 0,
-    string: 0,
-  });
+  // editor state
+  const [selection, setSelection] = useState(new Range());
+  const [initialSelectionPosition, setInitialSelectionPosition] = useState(selection.start);
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   const handleFocus = () => {
-    console.log("focus");
-    // wait 100ms to try to let the mouse handlers go first and update cursor position
+    // wait 100ms to try to let the mouse handlers go first and avoid flashing old position when clicking back in
     setTimeout(() => setHasFocus(true), 100);
+  };
+
+  const handleBlur = () => {
+    setHasFocus(false);
   };
 
   const positionFromTarget = (target: HTMLElement): Position | null => {
@@ -64,34 +69,43 @@ const TabEditor: React.FC = () => {
     const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
     const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
     const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
-    return {
-      line: lineIndex,
-      chord: chordIndex,
-      string: stringIndex,
-    };
+    return new Position(lineIndex, chordIndex, stringIndex);
   };
 
-  const handleMouseDown = () => {
+  const handleMouseDown = (e: React.MouseEvent) => {
     commitEdit();
-    console.log("mousedown");
+    const clickedPosition = positionFromTarget(e.target as HTMLElement);
+    if (!clickedPosition) {
+      return;
+    }
+    setSelection(new Range(clickedPosition));
+    setInitialSelectionPosition(clickedPosition);
+    setIsSelecting(true);
+  };
+
+  const handleMouseOver = (e: React.MouseEvent) => {
+    if (!isSelecting) {
+      return;
+    }
+    const clickedPosition = positionFromTarget(e.target as HTMLElement);
+    if (!clickedPosition) {
+      // TODO: I'm not actually sure what this means, don't do anything for now
+      return;
+    }
+    // selecting from top/left to bottom/right
+    if (clickedPosition.isGreaterThanOrEqualTo(initialSelectionPosition)) {
+      setSelection(new Range(initialSelectionPosition, clickedPosition));
+      // TODO: need to consider doing the full row selection thing here
+      // not sure how that will feel
+    }
+    // selecting from bottom/right to top/left
+    else {
+      setSelection(new Range(clickedPosition, initialSelectionPosition));
+    }
   };
 
   const handleMouseUp = () => {
-    console.log("mouseup");
-  };
-
-  const handleBlur = () => {
-    console.log("blur");
-    setHasFocus(false);
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    const clickedPosition = positionFromTarget(e.target as HTMLElement);
-    if (clickedPosition) {
-      setCursor(clickedPosition);
-      // Set focus after cursor position is updated
-      setHasFocus(true);
-    }
+    setIsSelecting(false);
   };
 
   const moveCursor = (
@@ -101,9 +115,11 @@ const TabEditor: React.FC = () => {
     shift: boolean
   ) => {
     commitEdit();
-    setCursor((prev) => {
-      let newLine = prev.line;
-      let newString = prev.string + dstring;
+    setSelection((prev) => {
+      // TODO: add shift handling for keyboard based selection
+      const prevStart = prev.start;
+      let newLine = prevStart.line;
+      let newString = prevStart.string + dstring;
 
       // Handle string movement that would cross line boundaries
       if (dstring !== 0) {
@@ -130,14 +146,10 @@ const TabEditor: React.FC = () => {
       newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
       const newChord = Math.max(
         0,
-        Math.min(tabLines[newLine].length - 1, prev.chord + dchord)
+        Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord)
       );
 
-      return {
-        line: newLine,
-        chord: newChord,
-        string: newString,
-      };
+      return new Range(new Position(newLine, newChord, newString));
     });
   };
 
@@ -150,9 +162,12 @@ const TabEditor: React.FC = () => {
   };
 
   const handleInputKey = (e: React.KeyboardEvent) => {
+    // if they start inputting, revert to inputting into start position
+    setSelection(new Range(selection.start));
+
     const key = e.key;
     if (key == "|") {
-      model.insertBarLine(cursor);
+      model.insertBarLine(selection.start);
       moveCursor(0, 2, 0, e.shiftKey);
       updateTabLines();
       return;
@@ -160,11 +175,11 @@ const TabEditor: React.FC = () => {
 
     let currentValue = "";
     if (isEditing) {
-      currentValue = model.getStringValue(cursor);
+      currentValue = model.getStringValue(selection.start);
     }
 
     const newValue = currentValue + key;
-    model.setStringValue(cursor, newValue);
+    model.setStringValue(selection.start, newValue);
     updateTabLines();
 
     startEditing();
@@ -172,7 +187,7 @@ const TabEditor: React.FC = () => {
 
   const handleNavigationKey = (e: React.KeyboardEvent) => {
     e.preventDefault();
-    const currentValue = model.getStringValue(cursor);
+    const currentValue = model.getStringValue(selection.start);
     switch (e.key) {
       case "ArrowRight":
         moveCursor(0, e.ctrlKey ? 8 : 1, 0, e.shiftKey);
@@ -199,11 +214,11 @@ const TabEditor: React.FC = () => {
       case "Enter":
         if (e.ctrlKey) {
           // Create a new line
-          model.insertLine(cursor);
+          model.insertLine(selection.start);
           updateTabLines();
         }
         if (e.shiftKey) {
-          model.insertChord(cursor);
+          model.insertChord(selection.start);
           updateTabLines();
         } else {
           commitEdit();
@@ -212,13 +227,13 @@ const TabEditor: React.FC = () => {
       case "Backspace":
         if (isEditing) {
           const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
-          model.setStringValue(cursor, newValue);
+          model.setStringValue(selection.start, newValue);
           updateTabLines();
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
-            model.deleteChord(cursor);
+            model.deleteChord(selection.start);
           } else {
-            model.setStringValue(cursor, EMPTY_NOTE);
+            model.setStringValue(selection.start, EMPTY_NOTE);
           }
           updateTabLines();
           moveCursor(0, -1, 0, false);
@@ -227,19 +242,20 @@ const TabEditor: React.FC = () => {
       case "Delete":
         if (isEditing) {
           const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
-          model.setStringValue(cursor, newValue);
+          model.setStringValue(selection.start, newValue);
           updateTabLines();
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
-            model.deleteChord(cursor);
+            model.deleteChord(selection.start);
           } else {
-            model.setStringValue(cursor, EMPTY_NOTE);
+            model.setStringValue(selection.start, EMPTY_NOTE);
           }
-          model.setStringValue(cursor, EMPTY_NOTE);
+          model.setStringValue(selection.start, EMPTY_NOTE);
           updateTabLines();
         }
         break;
       case "Escape":
+        // TODO: should this cancel the selection and resume to start or end?
         commitEdit();
         break;
     }
@@ -299,8 +315,8 @@ const TabEditor: React.FC = () => {
         onFocus={handleFocus}
         onBlur={handleBlur}
         onMouseDown={handleMouseDown}
+        onMouseOver={handleMouseOver}
         onMouseUp={handleMouseUp}
-        onClick={handleClick}
       >
         {tabLines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="flex mb-4">
@@ -336,10 +352,9 @@ const TabEditor: React.FC = () => {
                     data-string={stringIndex}
                     data-cell
                     className={`flex text-center ${
-                      lineIndex === cursor.line &&
-                      chordIndex === cursor.chord &&
-                      stringIndex === cursor.string &&
-                      hasFocus
+                      selection.contains(
+                        new Position(lineIndex, chordIndex, stringIndex)
+                      ) && hasFocus
                         ? isEditing
                           ? "relative"
                           : "bg-pink-600"
@@ -349,9 +364,9 @@ const TabEditor: React.FC = () => {
                     <span className="relative">
                       {stringValue}
                       {isEditing &&
-                        lineIndex === cursor.line &&
-                        chordIndex === cursor.chord &&
-                        stringIndex === cursor.string &&
+                        selection.contains(
+                          new Position(lineIndex, chordIndex, stringIndex)
+                        ) &&
                         hasFocus && (
                           <span
                             className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${
