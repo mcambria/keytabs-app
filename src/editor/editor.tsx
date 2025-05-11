@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  TabModel,
-  Position,
-  Range,
-  EMPTY_NOTE,
-  STRING_NAMES,
-  NUM_STRINGS,
-  BAR_DELIMITER,
-} from "./tab-model";
+import { TabModel, Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "./tab-model";
 
 const CURRENT_SONG_KEY = "currentsong";
 const CURRENT_ARTIST_KEY = "currentartist";
@@ -15,12 +7,8 @@ const CURRENT_TABLINES_KEY = "currenttablines";
 
 const TabEditor: React.FC = () => {
   // Song model
-  const [song, setSong] = useState(
-    () => localStorage.getItem(CURRENT_SONG_KEY) || ""
-  );
-  const [artist, setArtist] = useState(
-    () => localStorage.getItem(CURRENT_ARTIST_KEY) || ""
-  );
+  const [song, setSong] = useState(() => localStorage.getItem(CURRENT_SONG_KEY) || "");
+  const [artist, setArtist] = useState(() => localStorage.getItem(CURRENT_ARTIST_KEY) || "");
   const [model] = useState(() => {
     const newModel = new TabModel();
     const saved = localStorage.getItem(CURRENT_TABLINES_KEY);
@@ -99,18 +87,25 @@ const TabEditor: React.FC = () => {
     }
 
     // selecting from top/left to bottom/right
-    if (clickedPosition.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
-      setSelection(new Range(
-        new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
-        new Position(clickedPosition.line, clickedPosition.chord, NUM_STRINGS)
-      ));
-    }
-    // selecting from bottom/right to top/left
-    else {
-      setSelection(new Range(
-        new Position(clickedPosition.line, clickedPosition.chord, 0),
-        new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS)
-      ));
+
+    if (clickedPosition.line === initialSelectionPosition.line) {
+      if (clickedPosition.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
+        setSelection(
+          new Range(
+            new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
+            new Position(clickedPosition.line, clickedPosition.chord, NUM_STRINGS)
+          )
+        );
+      }
+      // selecting from bottom/right to top/left
+      else {
+        setSelection(
+          new Range(
+            new Position(clickedPosition.line, clickedPosition.chord, 0),
+            new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS)
+          )
+        );
+      }
     }
   };
 
@@ -118,12 +113,7 @@ const TabEditor: React.FC = () => {
     setIsSelecting(false);
   };
 
-  const moveCursor = (
-    dline: number,
-    dchord: number,
-    dstring: number,
-    shift: boolean
-  ) => {
+  const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean) => {
     commitEdit();
     setSelection((prev) => {
       // TODO: add shift handling for keyboard based selection
@@ -154,10 +144,7 @@ const TabEditor: React.FC = () => {
 
       // Handle line movement
       newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
-      const newChord = Math.max(
-        0,
-        Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord)
-      );
+      const newChord = Math.max(0, Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord));
 
       return new Range(new Position(newLine, newChord, newString));
     });
@@ -273,18 +260,7 @@ const TabEditor: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle navigation keys
-    if (
-      [
-        "ArrowRight",
-        "ArrowLeft",
-        "ArrowUp",
-        "ArrowDown",
-        "Enter",
-        "Backspace",
-        "Delete",
-        "Escape",
-      ].includes(e.key)
-    ) {
+    if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape"].includes(e.key)) {
       handleNavigationKey(e);
       return;
     }
@@ -333,10 +309,7 @@ const TabEditor: React.FC = () => {
             <div className="flex-col">
               {STRING_NAMES.map((stringName, stringIndex) => (
                 // -2 relative to start of the actual tab
-                <div
-                  key={`${lineIndex}--2-${stringIndex}`}
-                  className="flex text-right text-ide-text-muted select-none"
-                >
+                <div key={`${lineIndex}--2-${stringIndex}`} className="flex text-right text-ide-text-muted select-none">
                   {stringName}
                 </div>
               ))}
@@ -344,10 +317,7 @@ const TabEditor: React.FC = () => {
             <div className="flex-col">
               {STRING_NAMES.map((_, stringIndex) => (
                 // -1 relative to start of the actual tab
-                <div
-                  key={`${lineIndex}-1-${stringIndex}`}
-                  className="flex text-center"
-                >
+                <div key={`${lineIndex}-1-${stringIndex}`} className="flex text-center">
                   |
                 </div>
               ))}
@@ -362,9 +332,7 @@ const TabEditor: React.FC = () => {
                     data-string={stringIndex}
                     data-cell
                     className={`flex text-center ${
-                      selection.contains(
-                        new Position(lineIndex, chordIndex, stringIndex)
-                      ) && hasFocus
+                      selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus
                         ? isEditing
                           ? "relative"
                           : "bg-pink-600"
@@ -374,9 +342,7 @@ const TabEditor: React.FC = () => {
                     <span className="relative">
                       {stringValue}
                       {isEditing &&
-                        selection.contains(
-                          new Position(lineIndex, chordIndex, stringIndex)
-                        ) &&
+                        selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
                         hasFocus && (
                           <span
                             className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${
@@ -393,10 +359,7 @@ const TabEditor: React.FC = () => {
             <div className="flex-col">
               {STRING_NAMES.map((_, stringIndex) => (
                 // +1 relative to length of the actual tab
-                <div
-                  key={`${lineIndex}-${tabLine.length}-${stringIndex}`}
-                  className="flex text-center"
-                >
+                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`} className="flex text-center">
                   |
                 </div>
               ))}
