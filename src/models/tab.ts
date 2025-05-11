@@ -138,7 +138,7 @@ export class TabModel {
   }
 
   getStringValue(position: Position): string {
-    return this.lines[position.line][position.chord][position.string];
+    return this.lines[position.line]?.[position.chord]?.[position.string] ?? EMPTY_NOTE;
   }
 
   getChordValue(position: Position): Chord {
@@ -163,6 +163,9 @@ export class TabModel {
   }
 
   deleteChord(position: Position): void {
+    if (this.lines[position.line].length == 1) {
+      return;
+    }
     const line = this.lines[position.line];
     line.splice(position.chord, 1);
   }
