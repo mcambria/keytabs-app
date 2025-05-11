@@ -8,13 +8,17 @@ import {
   BAR_DELIMITER,
 } from "./tab-model";
 
+const CURRENT_SONG_KEY = "currentsong";
+const CURRENT_ARTIST_KEY = "currentartist";
+const CURRENT_TABLINES_KEY = "currenttablines";
+
 const TabEditor: React.FC = () => {
   // Song model
-  const [song, setSong] = useState(() => localStorage.getItem("tabSong") || "");
-  const [artist, setArtist] = useState(() => localStorage.getItem("tabArtist") || "");
+  const [song, setSong] = useState(() => localStorage.getItem(CURRENT_SONG_KEY) || "");
+  const [artist, setArtist] = useState(() => localStorage.getItem(CURRENT_ARTIST_KEY) || "");
   const [model] = useState(() => {
     const newModel = new TabModel();
-    const saved = localStorage.getItem("tabLines");
+    const saved = localStorage.getItem(CURRENT_TABLINES_KEY);
     if (saved) {
       newModel.setLines(JSON.parse(saved));
     }
@@ -26,15 +30,15 @@ const TabEditor: React.FC = () => {
   // Save state when it changes
   // TODO: this seems too frequent, it would be better to catch page reloads and auto-save if there's been any changes after a pause in typing or after 15s
   useEffect(() => {
-    localStorage.setItem("tabSong", song);
+    localStorage.setItem(CURRENT_SONG_KEY, song);
   }, [song]);
 
   useEffect(() => {
-    localStorage.setItem("tabArtist", artist);
+    localStorage.setItem(CURRENT_ARTIST_KEY, artist);
   }, [artist]);
 
   useEffect(() => {
-    localStorage.setItem("tabLines", JSON.stringify(tabLines));
+    localStorage.setItem(CURRENT_TABLINES_KEY, JSON.stringify(tabLines));
   }, [tabLines]);
 
   const [cursor, setCursor] = useState<Position>({
