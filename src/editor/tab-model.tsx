@@ -2,13 +2,64 @@ export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = STRING_NAMES.length;
 export const INITIAL_NUM_COLUMNS = 32;
 export const EMPTY_NOTE = "-";
-export const BAR_DELIMITER = '|';
-const BAR_LINE =  Array.from({ length: NUM_STRINGS }, () => BAR_DELIMITER);
+export const BAR_DELIMITER = "|";
+const BAR_LINE = Array.from({ length: NUM_STRINGS }, () => BAR_DELIMITER);
 
-export interface Position {
+export class Position {
   line: number;
   chord: number;
   string: number;
+
+  constructor();
+  constructor(line: number, chord: number, string: number);
+  constructor(line?: number, chord?: number, string?: number) {
+    this.line = line ?? 0;
+    this.chord = chord ?? 0;
+    this.string = string ?? 0;
+  }
+
+  equals(position: Position): boolean {
+    return this.line == position.line &&
+      this.chord == position.chord &&
+      this.string == position.string;
+  }
+
+  isGreaterThanOrEqualTo(position: Position): boolean {
+    return this.line >= position.line &&
+      this.chord >= position.chord &&
+      this.string >= position.string;
+  }
+
+  isLessThanOrEqualTo(position: Position): boolean {
+    return this.line <= position.line &&
+      this.chord <= position.chord &&
+      this.string <= position.string;
+  }
+}
+
+export class Range {
+  start: Position;
+  end: Position;
+
+  // TODO: we should consider a property setter here for auto-fixing start and end positions
+  // or consider enforcing immutability with getter-only fields
+
+  constructor();
+  // single position constructor
+  constructor(start: Position);
+  constructor(start: Position, end: Position);
+  constructor(start?: Position, end?: Position) {
+    this.start = start ?? new Position();
+    this.end = end ?? this.start;
+  }
+
+  isSinglePosition(): boolean {
+    return this.start.equals(this.end);
+  }
+
+  contains(position: Position) {
+    return position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
+  }
 }
 
 export type TabLines = string[][][];
