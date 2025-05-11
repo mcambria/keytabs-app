@@ -1,36 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { TabModel, Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "../models/tab";
-
-const CURRENT_SONG_KEY = "currentsong";
-const CURRENT_ARTIST_KEY = "currentartist";
-const CURRENT_TABLINES_KEY = "currenttablines";
+import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "../models/tab";
+import { TabService } from "../services/tabService";
 
 const TabEditor: React.FC = () => {
-  // Song model
-  const [song, setSong] = useState(() => localStorage.getItem(CURRENT_SONG_KEY) || "");
-  const [artist, setArtist] = useState(() => localStorage.getItem(CURRENT_ARTIST_KEY) || "");
-  const [model] = useState(() => {
-    const newModel = new TabModel();
-    const saved = localStorage.getItem(CURRENT_TABLINES_KEY);
-    if (saved) {
-      newModel.setLines(JSON.parse(saved));
-    }
-    return newModel;
-  });
+  const [model] = useState(() => TabService.getCurrentTab());
   const [tabLines, setTabLines] = useState(model.getLines());
   const updateTabLines = () => setTabLines(model.createMutableCopy());
 
   // Save state when it changes
-  // TODO: this seems too frequent, it would be better to catch page reloads and auto-save if there's been any changes after a pause in typing or after 15s
   useEffect(() => {
-    localStorage.setItem(CURRENT_SONG_KEY, song);
-  }, [song]);
-  useEffect(() => {
-    localStorage.setItem(CURRENT_ARTIST_KEY, artist);
-  }, [artist]);
-  useEffect(() => {
-    localStorage.setItem(CURRENT_TABLINES_KEY, JSON.stringify(tabLines));
-  }, [tabLines]);
+    TabService.saveCurrentTab(model);
+  }, [tabLines, model]);
 
   // editor state
   const [selection, setSelection] = useState(new Range());
@@ -303,15 +283,21 @@ const TabEditor: React.FC = () => {
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
-          value={song}
-          onChange={(e) => setSong(e.target.value)}
+          value={model.getSong()}
+          onChange={(e) => {
+            model.setSong(e.target.value);
+            updateTabLines();
+          }}
           placeholder="Song"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
         />
         <input
           type="text"
-          value={artist}
-          onChange={(e) => setArtist(e.target.value)}
+          value={model.getArtist()}
+          onChange={(e) => {
+            model.setArtist(e.target.value);
+            updateTabLines();
+          }}
           placeholder="Artist"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
         />

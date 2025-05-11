@@ -104,9 +104,13 @@ const normalizeChordLength = (chord: Chord) => {
 
 export class TabModel {
   private lines: TabLines;
+  private song: string;
+  private artist: string;
 
   constructor() {
     this.lines = [defaultLine()];
+    this.song = "";
+    this.artist = "";
   }
 
   getLines(): TabLines {
@@ -115,6 +119,22 @@ export class TabModel {
 
   setLines(lines: TabLines): void {
     this.lines = lines;
+  }
+
+  getSong(): string {
+    return this.song;
+  }
+
+  setSong(song: string): void {
+    this.song = song;
+  }
+
+  getArtist(): string {
+    return this.artist;
+  }
+
+  setArtist(artist: string): void {
+    this.artist = artist;
   }
 
   getStringValue(position: Position): string {
