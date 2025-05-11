@@ -58,7 +58,7 @@ const TabEditor: React.FC = () => {
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    console.log("handling click");
+    commitEdit();
     const target = e.target as HTMLElement;
     const cell = target.closest("[data-cell]");
     if (cell) {
@@ -133,10 +133,8 @@ const TabEditor: React.FC = () => {
   const handleInputKey = (e: React.KeyboardEvent) => {
     const key = e.key;
     if (key == "|") {
-      if (!e.shiftKey) {
-        return;
-      }
       model.insertBarLine(cursor);
+      moveCursor(0, 2, 0, e.shiftKey);
       updateTabLines();
       return;
     }
@@ -188,8 +186,7 @@ const TabEditor: React.FC = () => {
         if (e.shiftKey) {
           model.insertChord(cursor);
           updateTabLines();
-        }
-        else {
+        } else {
           commitEdit();
         }
         break;
@@ -201,8 +198,7 @@ const TabEditor: React.FC = () => {
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
             model.deleteChord(cursor);
-          }
-          else {
+          } else {
             model.setStringValue(cursor, EMPTY_NOTE);
           }
           updateTabLines();
@@ -217,8 +213,7 @@ const TabEditor: React.FC = () => {
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
             model.deleteChord(cursor);
-          }
-          else {
+          } else {
             model.setStringValue(cursor, EMPTY_NOTE);
           }
           model.setStringValue(cursor, EMPTY_NOTE);
@@ -323,12 +318,24 @@ const TabEditor: React.FC = () => {
                       lineIndex === cursor.line &&
                       chordIndex === cursor.chord &&
                       stringIndex === cursor.string &&
-                      hasFocus // TODO: should I use an insert style cursor for edit mode, and a block style cursor for not?
-                        ? "bg-pink-600"
+                      hasFocus
+                        ? isEditing
+                          ? "relative"
+                          : "bg-pink-600"
                         : ""
                     }`}
                   >
-                    {stringValue + (stringValue === BAR_DELIMITER ? '' : EMPTY_NOTE)}
+                    <span className="relative">
+                      {stringValue}
+                      {isEditing &&
+                        lineIndex === cursor.line &&
+                        chordIndex === cursor.chord &&
+                        stringIndex === cursor.string &&
+                        hasFocus && (
+                        <span className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${stringValue === EMPTY_NOTE ? "left-0" : ""}`} />
+                        )}
+                      {stringValue === BAR_DELIMITER ? "" : EMPTY_NOTE}
+                    </span>
                   </div>
                 ))}
               </div>
