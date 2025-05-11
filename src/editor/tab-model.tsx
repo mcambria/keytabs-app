@@ -24,13 +24,13 @@ export class Position {
       this.string == position.string;
   }
 
-  isGreaterThanOrEqualTo(position: Position): boolean {
+  isChordGreaterThanOrEqualTo(position: Position): boolean {
     return this.line >= position.line &&
       this.chord >= position.chord &&
       this.string >= position.string;
   }
 
-  isLessThanOrEqualTo(position: Position): boolean {
+  isChordLessThanOrEqualTo(position: Position): boolean {
     return this.line <= position.line &&
       this.chord <= position.chord &&
       this.string <= position.string;
@@ -58,7 +58,7 @@ export class Range {
   }
 
   contains(position: Position) {
-    return position.isGreaterThanOrEqualTo(this.start) && position.isLessThanOrEqualTo(this.end);
+    return position.isChordGreaterThanOrEqualTo(this.start) && position.isChordLessThanOrEqualTo(this.end);
   }
 }
 

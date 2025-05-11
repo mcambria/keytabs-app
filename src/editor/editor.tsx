@@ -92,15 +92,25 @@ const TabEditor: React.FC = () => {
       // TODO: I'm not actually sure what this means, don't do anything for now
       return;
     }
+    if (clickedPosition.equals(initialSelectionPosition)) {
+      // we're on the starting cell, just one cell being selected is okay
+      setSelection(new Range(clickedPosition));
+      return;
+    }
+
     // selecting from top/left to bottom/right
-    if (clickedPosition.isGreaterThanOrEqualTo(initialSelectionPosition)) {
-      setSelection(new Range(initialSelectionPosition, clickedPosition));
-      // TODO: need to consider doing the full row selection thing here
-      // not sure how that will feel
+    if (clickedPosition.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
+      setSelection(new Range(
+        new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
+        new Position(clickedPosition.line, clickedPosition.chord, NUM_STRINGS)
+      ));
     }
     // selecting from bottom/right to top/left
     else {
-      setSelection(new Range(clickedPosition, initialSelectionPosition));
+      setSelection(new Range(
+        new Position(clickedPosition.line, clickedPosition.chord, 0),
+        new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS)
+      ));
     }
   };
 
