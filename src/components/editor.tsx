@@ -260,7 +260,11 @@ const TabEditor: React.FC = () => {
           model.insertChord(selection.start);
           updateTabLines();
         } else {
-          commitEdit();
+          if (isEditing) {
+            commitEdit();
+          } else {
+            startEditing();
+          }
         }
         break;
       case "Backspace":
