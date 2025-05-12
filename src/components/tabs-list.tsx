@@ -1,6 +1,6 @@
-import React from 'react';
-import CollapsiblePanel from '../components/CollapsiblePanel';
-import { CollapsiblePanelPlacement } from '../components/CollapsiblePanel';
+import React from "react";
+import CollapsiblePanel from "./collapsible-panel";
+import { CollapsiblePanelPlacement } from "./collapsible-panel";
 
 const TabsList: React.FC = () => {
   return (
@@ -12,4 +12,4 @@ const TabsList: React.FC = () => {
   );
 };
 
-export default TabsList; 
+export default TabsList;

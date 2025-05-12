@@ -1,6 +1,6 @@
-import TabEditor from "./editor/editor";
-import Keybindings from "./keybindings/Keybindings";
-import TabsList from "./tabs/TabsList";
+import TabEditor from "./components/editor";
+import Keybindings from "./components/keybindings";
+import TabsList from "./components/tabs-list";
 
 function App() {
   return (

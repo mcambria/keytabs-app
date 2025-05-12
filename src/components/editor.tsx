@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "../models/tab";
-import { TabService } from "../services/tabService";
+import { TabService } from "../services/tab-service";
 
 const TabEditor: React.FC = () => {
   const [model] = useState(() => TabService.getCurrentTab());
@@ -63,19 +63,19 @@ const TabEditor: React.FC = () => {
     updateSelection(clickedPosition);
   };
 
-  const updateSelection = (targetPosition: Position) => {
+  const updateSelection = (position: Position) => {
     // if we are on the same cell, just select that cell
-    if (targetPosition.equals(initialSelectionPosition)) {
-      setSelection(new Range(targetPosition));
+    if (position.equals(initialSelectionPosition)) {
+      setSelection(new Range(position));
     }
     // if we are on the same line, select chords within that line
-    else if (targetPosition.line === initialSelectionPosition.line) {
+    else if (position.line === initialSelectionPosition.line) {
       // selecting left to right
-      if (targetPosition.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
+      if (position.isChordGreaterThanOrEqualTo(initialSelectionPosition)) {
         setSelection(
           new Range(
             new Position(initialSelectionPosition.line, initialSelectionPosition.chord, 0),
-            new Position(targetPosition.line, targetPosition.chord, NUM_STRINGS - 1)
+            new Position(position.line, position.chord, NUM_STRINGS - 1)
           )
         );
       }
@@ -83,7 +83,7 @@ const TabEditor: React.FC = () => {
       else {
         setSelection(
           new Range(
-            new Position(targetPosition.line, targetPosition.chord, 0),
+            new Position(position.line, position.chord, 0),
             new Position(initialSelectionPosition.line, initialSelectionPosition.chord, NUM_STRINGS - 1)
           )
         );
@@ -92,11 +92,11 @@ const TabEditor: React.FC = () => {
     // we are selecting entire lines
     else {
       // selecting top to bottom
-      if (targetPosition.line > initialSelectionPosition.line) {
+      if (position.line > initialSelectionPosition.line) {
         setSelection(
           new Range(
             new Position(initialSelectionPosition.line, 0, 0),
-            new Position(targetPosition.line, tabLines[targetPosition.line].length - 1, NUM_STRINGS)
+            new Position(position.line, tabLines[position.line].length - 1, NUM_STRINGS)
           )
         );
       }
@@ -104,7 +104,7 @@ const TabEditor: React.FC = () => {
       else {
         setSelection(
           new Range(
-            new Position(targetPosition.line, 0, 0),
+            new Position(position.line, 0, 0),
             new Position(initialSelectionPosition.line, tabLines[initialSelectionPosition.line].length - 1, NUM_STRINGS)
           )
         );
@@ -116,8 +116,16 @@ const TabEditor: React.FC = () => {
     setIsSelecting(false);
   };
 
-  const calculateNewPosition = (referencePosition: Position, dline: number, dchord: number, dstring: number) => {
-    const prevStart = referencePosition;
+  const setCursor = (position: Position, shift: boolean) => {
+    if (shift) {
+      updateSelection(position);
+    } else {
+      setSelection(new Range(position));
+    }
+  };
+
+  const calculateNewPosition = (dline: number, dchord: number, dstring: number) => {
+    const prevStart = initialSelectionPosition;
     let newLine = prevStart.line;
     let newString = prevStart.string + dstring;
 
@@ -145,23 +153,43 @@ const TabEditor: React.FC = () => {
     // Handle line movement
     newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
     const newChord = Math.max(0, Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord));
-
-    return new Position(newLine, newChord, newString);
   };
 
   const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean) => {
     commitEdit();
-    
-    const newPosition = calculateNewPosition(selection.end, dline, dchord, dstring);
 
-    // regular move
-    if (!shift) {
-      setInitialSelectionPosition(newPosition);
-      setSelection(new Range(newPosition));
-    }
-    else {
-      updateSelection(newPosition);
-    }
+    setSelection((prev) => {
+      const prevStart = prev.start;
+      let newLine = prevStart.line;
+      let newString = prevStart.string + dstring;
+
+      // Handle string movement that would cross line boundaries
+      if (dstring !== 0) {
+        if (newString < 0) {
+          // Moving up past the first string
+          if (newLine > 0) {
+            newLine--;
+            newString = NUM_STRINGS - 1;
+          } else {
+            newString = 0;
+          }
+        } else if (newString >= NUM_STRINGS) {
+          // Moving down past the last string
+          if (newLine < tabLines.length - 1) {
+            newLine++;
+            newString = 0;
+          } else {
+            newString = NUM_STRINGS - 1;
+          }
+        }
+      }
+
+      // Handle line movement
+      newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
+      const newChord = Math.max(0, Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord));
+
+      return new Range(new Position(newLine, newChord, newString));
+    });
   };
 
   const startEditing = () => {

@@ -1,6 +1,6 @@
-import React from 'react';
-import CollapsiblePanel from '../components/CollapsiblePanel';
-import { CollapsiblePanelPlacement } from '../components/CollapsiblePanel';
+import React from "react";
+import CollapsiblePanel from "./collapsible-panel";
+import { CollapsiblePanelPlacement } from "./collapsible-panel";
 
 const Keybindings: React.FC = () => {
   return (
@@ -45,4 +45,4 @@ const Keybindings: React.FC = () => {
   );
 };
 
-export default Keybindings; 
+export default Keybindings;
