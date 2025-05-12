@@ -107,10 +107,12 @@ export class TabModel {
   private song: string;
   private artist: string;
 
-  constructor() {
-    this.lines = [defaultLine()];
-    this.song = "";
-    this.artist = "";
+  constructor();
+  constructor(lines: TabLines, song: string, artist: string);
+  constructor(lines?: TabLines, song?: string, artist?: string) {
+    this.lines = lines ?? [defaultLine()];
+    this.song = song ?? "";
+    this.artist = artist ?? "";
   }
 
   getLines(): TabLines {
