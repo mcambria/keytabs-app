@@ -255,8 +255,7 @@ const TabEditor: React.FC = () => {
           // Create a new line
           model.insertLine(selection.start);
           updateTabLines();
-        }
-        if (e.shiftKey) {
+        } else if (e.shiftKey) {
           model.insertChord(selection.start);
           updateTabLines();
         } else {
