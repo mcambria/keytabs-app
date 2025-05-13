@@ -3,5 +3,6 @@
         "*.css": "tailwindcss",
         "*.scss": "tailwindcss"
     },
-    "prettier.printWidth": 120
+    "prettier.printWidth": 120,
+    // TODO: using pnpm as package manager instead
 }
