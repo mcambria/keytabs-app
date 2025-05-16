@@ -40,12 +40,13 @@ export const useTabStore = create<TabsMetadataStore>()(
       },
 
       updateTabMetadata: (id, updates) => {
-        const tabList = get().tabList;
-        const metadata = tabList.filter(v => v.id == id)[0] ?? null;
         set(state => ({
           tabList: state.tabList.map(tab =>
             tab.id === id ? { ...tab, ...updates } : tab
           ),
+          currentTabMetadata: state.currentTabId === id && state.currentTabMetadata ?
+            { ...state.currentTabMetadata, ...updates } as TabMetadata :
+            state.currentTabMetadata
         }));
       },
 

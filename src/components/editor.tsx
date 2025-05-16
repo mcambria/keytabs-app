@@ -115,7 +115,11 @@ const TabEditor: React.FC = () => {
         setSelection(
           new Range(
             new Position(position.line, 0, 0),
-            new Position(initialSelectionPosition.line, model.lines[initialSelectionPosition.line].length - 1, NUM_STRINGS)
+            new Position(
+              initialSelectionPosition.line,
+              model.lines[initialSelectionPosition.line].length - 1,
+              NUM_STRINGS
+            )
           )
         );
       }
@@ -335,15 +339,19 @@ const TabEditor: React.FC = () => {
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
-          value={currentTabMetadata?.song}
-          onChange={(e) => {updateTabMetadata(currentTabId, {song: e.target.value})}}
+          value={currentTabMetadata?.song ?? ""}
+          onChange={(e) => {
+            updateTabMetadata(currentTabId, { song: e.target.value });
+          }}
           placeholder="Song"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
         />
         <input
           type="text"
-          value={currentTabMetadata?.artist}
-          onChange={(e) => {updateTabMetadata(currentTabId, {artist: e.target.value})}}
+          value={currentTabMetadata?.artist ?? ""}
+          onChange={(e) => {
+            updateTabMetadata(currentTabId, { artist: e.target.value });
+          }}
           placeholder="Artist"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
         />
