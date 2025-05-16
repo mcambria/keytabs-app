@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from "react";
-import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER } from "../models/tab";
-import { TabService } from "../services/tab-service";
+import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
+import { useTabContentStore } from "@/services/use-tab-content";
+import { useTabStore } from "@/services/use-tabs";
 
 const TabEditor: React.FC = () => {
-  const [model] = useState(() => TabService.getCurrentTab());
-  const [tabLines, setTabLines] = useState(model.getLines());
-  const updateTabLines = () => setTabLines(model.createMutableCopy());
+  let { currentTabId, setCurrentTabId, currentTabMetadata, updateTabMetadata } = useTabStore();
+  const { tab, loadOrCreateTab, saveTab } = useTabContentStore();
+
+  if (!currentTabId) {
+    currentTabId = crypto.randomUUID();
+    setCurrentTabId(currentTabId);
+  }
+
+  useEffect(() => loadOrCreateTab(), [currentTabId]);
+  const [model, setModel] = useState(new TabModel(tab));
+  const updateTabLines = () => setModel(model.clone());
 
   // Save state when it changes
   useEffect(() => {
-    TabService.saveCurrentTab(model);
-  }, [tabLines, model]);
+    saveTab();
+    // TODO: can we get rid of one of these
+  }, [model, currentTabId]);
 
   // editor state
   const [selection, setSelection] = useState(new Range());
@@ -96,7 +106,7 @@ const TabEditor: React.FC = () => {
         setSelection(
           new Range(
             new Position(initialSelectionPosition.line, 0, 0),
-            new Position(position.line, tabLines[position.line].length - 1, NUM_STRINGS)
+            new Position(position.line, model.lines[position.line].length - 1, NUM_STRINGS)
           )
         );
       }
@@ -105,7 +115,7 @@ const TabEditor: React.FC = () => {
         setSelection(
           new Range(
             new Position(position.line, 0, 0),
-            new Position(initialSelectionPosition.line, tabLines[initialSelectionPosition.line].length - 1, NUM_STRINGS)
+            new Position(initialSelectionPosition.line, model.lines[initialSelectionPosition.line].length - 1, NUM_STRINGS)
           )
         );
       }
@@ -141,7 +151,7 @@ const TabEditor: React.FC = () => {
         }
       } else if (newString >= NUM_STRINGS) {
         // Moving down past the last string
-        if (newLine < tabLines.length - 1) {
+        if (newLine < model.lines.length - 1) {
           newLine++;
           newString = 0;
         } else {
@@ -151,8 +161,8 @@ const TabEditor: React.FC = () => {
     }
 
     // Handle line movement
-    newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
-    const newChord = Math.max(0, Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord));
+    newLine = Math.max(0, Math.min(model.lines.length - 1, newLine + dline));
+    const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, prevStart.chord + dchord));
   };
 
   const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean) => {
@@ -175,7 +185,7 @@ const TabEditor: React.FC = () => {
           }
         } else if (newString >= NUM_STRINGS) {
           // Moving down past the last string
-          if (newLine < tabLines.length - 1) {
+          if (newLine < model.lines.length - 1) {
             newLine++;
             newString = 0;
           } else {
@@ -185,8 +195,8 @@ const TabEditor: React.FC = () => {
       }
 
       // Handle line movement
-      newLine = Math.max(0, Math.min(tabLines.length - 1, newLine + dline));
-      const newChord = Math.max(0, Math.min(tabLines[newLine].length - 1, prevStart.chord + dchord));
+      newLine = Math.max(0, Math.min(model.lines.length - 1, newLine + dline));
+      const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, prevStart.chord + dchord));
 
       return new Range(new Position(newLine, newChord, newString));
     });
@@ -325,21 +335,15 @@ const TabEditor: React.FC = () => {
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
-          value={model.getSong()}
-          onChange={(e) => {
-            model.setSong(e.target.value);
-            updateTabLines();
-          }}
+          value={currentTabMetadata?.song}
+          onChange={(e) => {updateTabMetadata(currentTabId, {song: e.target.value})}}
           placeholder="Song"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
         />
         <input
           type="text"
-          value={model.getArtist()}
-          onChange={(e) => {
-            model.setArtist(e.target.value);
-            updateTabLines();
-          }}
+          value={currentTabMetadata?.artist}
+          onChange={(e) => {updateTabMetadata(currentTabId, {artist: e.target.value})}}
           placeholder="Artist"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
         />
@@ -354,7 +358,7 @@ const TabEditor: React.FC = () => {
         onMouseOver={handleMouseOver}
         onMouseUp={handleMouseUp}
       >
-        {tabLines.map((tabLine, lineIndex) => (
+        {model.lines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="flex mb-4">
             <div className="flex-col">
               {STRING_NAMES.map((stringName, stringIndex) => (

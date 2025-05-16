@@ -1,3 +1,5 @@
+import { TabData, Chord, TabLines } from "@/services/use-tab-content";
+
 export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = STRING_NAMES.length;
 export const INITIAL_NUM_COLUMNS = 32;
@@ -5,13 +7,7 @@ export const EMPTY_NOTE = "-";
 export const BAR_DELIMITER = "|";
 const BAR_LINE = Array.from({ length: NUM_STRINGS }, () => BAR_DELIMITER);
 
-export interface IPosition {
-  line: number,
-  chord: number,
-  string: number
-}
-
-export class Position implements IPosition {
+export class Position {
   line: number;
   chord: number;
   string: number;
@@ -84,12 +80,9 @@ export class Range {
   }
 }
 
-export type TabLines = string[][][];
-export type Chord = string[];
-
-const defaultLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
-
-const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
+export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
+export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
+export const defaultTabLines = (): TabLines => [defaultTabLine()];
 
 const normalizeChordLength = (chord: Chord) => {
   // TODO: this is going to have a problem with - in front
@@ -97,46 +90,20 @@ const normalizeChordLength = (chord: Chord) => {
 
   // Find the maximum number of non-dash characters
   const maxLength = Math.max(Math.max(...stripped.map((str) => str.length)), 1);
-
+  
+  // TODO: this is causing the enter button to pad to here
+  // need to just pad it in the UI and then on export
   // Pad each string to that length, counting only real characters
   return stripped.map((str) => str.padEnd(maxLength, "-"));
 };
 
 export class TabModel {
-  private lines: TabLines;
-  private song: string;
-  private artist: string;
+  id: string;
+  lines: TabLines;
 
-  constructor();
-  constructor(lines: TabLines, song: string, artist: string);
-  constructor(lines?: TabLines, song?: string, artist?: string) {
-    this.lines = lines ?? [defaultLine()];
-    this.song = song ?? "";
-    this.artist = artist ?? "";
-  }
-
-  getLines(): TabLines {
-    return this.lines;
-  }
-
-  setLines(lines: TabLines): void {
-    this.lines = lines;
-  }
-
-  getSong(): string {
-    return this.song;
-  }
-
-  setSong(song: string): void {
-    this.song = song;
-  }
-
-  getArtist(): string {
-    return this.artist;
-  }
-
-  setArtist(artist: string): void {
-    this.artist = artist;
+  constructor(data: TabData) {
+    this.id = data?.id ?? crypto.randomUUID();
+    this.lines = data?.lines ?? [defaultTabLine()];
   }
 
   getStringValue(position: Position): string {
@@ -173,7 +140,7 @@ export class TabModel {
   }
 
   insertLine(position: Position): void {
-    this.lines.splice(position.line + 1, 0, defaultLine());
+    this.lines.splice(position.line + 1, 0, defaultTabLine());
   }
 
   deleteLine(position: Position): void {
@@ -188,7 +155,13 @@ export class TabModel {
     this.lines[position.line].splice(position.chord + 1, 0, value);
   }
 
-  createMutableCopy(): TabLines {
-    return this.lines.map((line) => line.map((chord) => [...chord]));
+  clone(): TabModel {
+    // TODO: consider using structuredClone window api instead
+    // TODO: consider marking lines as dirty and only making new copies of those since 
+    return new TabModel(this.toData());
+  }
+
+  toData(): TabData {
+    return { id: this.id, lines: [...this.lines] };
   }
 }

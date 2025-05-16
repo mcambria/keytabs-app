@@ -1,51 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import CollapsiblePanel from "./collapsible-panel";
 import { CollapsiblePanelPlacement } from "./collapsible-panel";
-import { TabsListService, TabMetadata } from "../services/tabs-list-service";
-import { TabService } from "../services/tab-service";
+import { useTabStore } from "@/services/use-tabs";
 
 const TabsList: React.FC = () => {
-  const [tabs, setTabs] = useState<TabMetadata[]>([]);
-
-  useEffect(() => {
-    // Load tabs on component mount
-    setTabs(TabsListService.getTabsList());
-  }, []);
-
-  const handleNewTab = () => {
-    const id = TabService.createNewTab();
-    setTabs(TabsListService.getTabsList());
-  };
-
-  const handleDeleteTab = (id: string) => {
-    TabService.deleteTab(id);
-    setTabs(TabsListService.getTabsList());
-  };
+  const { tabList, setCurrentTabId, createTabMetadata, deleteTabMetadata: deleteTab } = useTabStore();
 
   return (
     <CollapsiblePanel title="My Tabs" placement={CollapsiblePanelPlacement.LEFT}>
       <div className="p-4">
         <button
-          onClick={handleNewTab}
+          onClick={() => {
+            createTabMetadata();
+          }}
           className="w-full mb-4 px-4 py-2 bg-ide-highlight text-ide-text rounded hover:bg-ide-highlight-hover transition-colors"
         >
           New Tab
         </button>
-        {tabs.length === 0 ? (
+        {tabList.length === 0 ? (
           <p className="text-sm italic text-gray-300">No tabs saved yet</p>
         ) : (
           <div className="space-y-2">
-            {tabs.map((tab) => (
+            {tabList.map((tab) => (
               <div
                 key={tab.id}
                 className="flex items-center justify-between p-2 bg-ide-bg-hover rounded hover:bg-ide-bg-hover-hover transition-colors"
+                onClick={() => setCurrentTabId(tab.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ide-text truncate">{tab.song || "Untitled"}</p>
-                  <p className="text-xs text-ide-text-muted truncate">{tab.artist || "Unknown Artist"}</p>
+                  <p className="text-sm font-medium text-ide-text truncate">{tab.song || "Draft"}</p>
+                  <p className="text-xs text-ide-text-muted truncate">{tab.artist}</p>
                 </div>
                 <button
-                  onClick={() => handleDeleteTab(tab.id)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    deleteTab(tab.id);
+                  }}
                   className="ml-2 p-1 text-ide-text-muted hover:text-ide-text transition-colors"
                 >
                   ×
