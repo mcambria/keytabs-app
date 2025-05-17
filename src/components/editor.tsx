@@ -1,26 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
-import { useTabContentStore } from "@/services/use-tab-content";
-import { useTabStore } from "@/services/use-tabs";
+import { TabData, useTabStore } from "@/services/tab-store";
 
 const TabEditor: React.FC = () => {
-  let { currentTabId, setCurrentTabId, currentTabMetadata, updateTabMetadata } = useTabStore();
-  const { tab, loadOrCreateTab, saveTab } = useTabContentStore();
+  let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
-  if (!currentTabId) {
-    currentTabId = crypto.randomUUID();
-    setCurrentTabId(currentTabId);
+  if (!currentTab) {
+    return (
+      <div>
+        <button onClick={() => {
+          const id = crypto.randomUUID();
+          // will create if it doesn't exist
+          setCurrentTab(id);
+        }}>Create New Tab</button>
+      </div>
+    );
   }
 
-  useEffect(() => loadOrCreateTab(), [currentTabId]);
-  const [model, setModel] = useState(new TabModel(tab));
+  const [model, setModel] = useState(new TabModel(currentTab));
   const updateTabLines = () => setModel(model.clone());
-
-  // Save state when it changes
-  useEffect(() => {
-    saveTab();
-    // TODO: can we get rid of one of these
-  }, [model, currentTabId]);
 
   // editor state
   const [selection, setSelection] = useState(new Range());
@@ -341,7 +339,7 @@ const TabEditor: React.FC = () => {
           type="text"
           value={currentTabMetadata?.song ?? ""}
           onChange={(e) => {
-            updateTabMetadata(currentTabId, { song: e.target.value });
+            updateTabMetadata(currentTab.id, { song: e.target.value });
           }}
           placeholder="Song"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
@@ -350,7 +348,7 @@ const TabEditor: React.FC = () => {
           type="text"
           value={currentTabMetadata?.artist ?? ""}
           onChange={(e) => {
-            updateTabMetadata(currentTabId, { artist: e.target.value });
+            updateTabMetadata(currentTab.id, { artist: e.target.value });
           }}
           placeholder="Artist"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
@@ -427,6 +425,10 @@ const TabEditor: React.FC = () => {
             </div>
           </div>
         ))}
+      </div>
+      <div className="flex justify-end gap-4 ml-4 mr-4">
+        <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button>
+        <button onClick={() => deleteCurrentTab()}>Delete Tab</button>
       </div>
     </div>
   );

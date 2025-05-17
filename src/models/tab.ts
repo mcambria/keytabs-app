@@ -1,4 +1,4 @@
-import { TabData, Chord, TabLines } from "@/services/use-tab-content";
+import { TabData, Chord, TabLines } from "@/services/tab-store";
 
 export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = STRING_NAMES.length;
