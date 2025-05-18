@@ -4,7 +4,11 @@ import { CollapsiblePanelPlacement } from "./collapsible-panel";
 
 const Keybindings: React.FC = () => {
   return (
-    <CollapsiblePanel title="Keybindings" placement={CollapsiblePanelPlacement.RIGHT}>
+    <CollapsiblePanel
+      title="Keybindings"
+      placement={CollapsiblePanelPlacement.RIGHT}
+      preferenceKey="keybindingsCollapsed"
+    >
       <div className="text-ide-text">
         <div className="mb-4">
           <h3 className="text-lg font-medium mb-2 text-ide-text">Navigation</h3>

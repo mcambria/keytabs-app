@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type User = { id: string, preferences: Preferences }
-export type Preferences = { tabsListCollapsed: boolean, keybingingsCollapsed: boolean }
+export type Preferences = { tabsListCollapsed: boolean, keybindingsCollapsed: boolean }
 
 type UserStoreState = {
     currentUser: User;
@@ -17,7 +17,7 @@ type UserState = UserStoreState & UserStoreStateActions;
 export const useUserStore = create<UserState>()(
     persist(
         (set) => ({
-            currentUser: { id: crypto.randomUUID(), preferences: { tabsListCollapsed: false, keybingingsCollapsed: false } },
+            currentUser: { id: crypto.randomUUID(), preferences: { tabsListCollapsed: false, keybindingsCollapsed: false } },
             updatePreferences: (updates: Partial<Preferences>) => {
                 set((state) => ({
                     currentUser: {

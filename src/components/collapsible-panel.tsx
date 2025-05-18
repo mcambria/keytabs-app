@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import { useUserStore } from "@/services/user-store";
 
 interface CollapsiblePanelProps {
   title: string;
@@ -6,44 +7,63 @@ interface CollapsiblePanelProps {
   defaultWidth?: string;
   collapsedWidth?: string;
   placement: CollapsiblePanelPlacement;
+  preferenceKey: "tabsListCollapsed" | "keybindingsCollapsed";
 }
 
 export enum CollapsiblePanelPlacement {
-  LEFT = 'left',
-  RIGHT = 'right'
+  LEFT = "left",
+  RIGHT = "right",
 }
 
 const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   title,
   children,
-  defaultWidth = 'w-1/5',
-  collapsedWidth = 'w-12',
-  placement
+  defaultWidth = "w-1/5",
+  collapsedWidth = "w-12",
+  placement,
+  preferenceKey,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { currentUser, updatePreferences } = useUserStore();
+  const [isCollapsed, setIsCollapsed] = useState(currentUser.preferences[preferenceKey]);
+
+  useEffect(() => {
+    setIsCollapsed(currentUser.preferences[preferenceKey]);
+  }, [currentUser.preferences[preferenceKey]]);
+
+  const handleCollapse = () => {
+    const newCollapsedState = !isCollapsed;
+    setIsCollapsed(newCollapsedState);
+    updatePreferences({ [preferenceKey]: newCollapsedState });
+  };
 
   const getArrowButton = () => {
-    const arrowIcon = placement === CollapsiblePanelPlacement.LEFT
-      ? (isCollapsed ? '→' : '←')
-      : (isCollapsed ? '←' : '→');
+    const arrowIcon =
+      placement === CollapsiblePanelPlacement.LEFT ? (isCollapsed ? "→" : "←") : isCollapsed ? "←" : "→";
 
     return (
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="text-ide-text-muted hover:text-ide-text transition-colors"
-      >
+      <button onClick={handleCollapse} className="text-ide-text-muted hover:text-ide-text transition-colors">
         {arrowIcon}
       </button>
     );
   };
 
   return (
-    <div className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 ${isCollapsed ? collapsedWidth : defaultWidth}`}>
-      <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+    <div
+      className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 ${
+        isCollapsed ? collapsedWidth : defaultWidth
+      }`}
+    >
+      <div className={`flex items-center mb-4 ${isCollapsed ? "justify-center" : "justify-between"}`}>
         {placement === CollapsiblePanelPlacement.RIGHT && getArrowButton()}
-        {<h2 className={`text-xl font-semibold text-ide-text transition-opacity duration-200 ${isCollapsed ? 'hidden' : ''}`}>
-          {title}
-        </h2>}
+        {
+          <h2
+            className={`text-xl font-semibold text-ide-text transition-opacity duration-200 ${
+              isCollapsed ? "hidden" : ""
+            }`}
+          >
+            {title}
+          </h2>
+        }
         {placement === CollapsiblePanelPlacement.LEFT && getArrowButton()}
       </div>
       {!isCollapsed && children}
@@ -51,4 +71,4 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   );
 };
 
-export default CollapsiblePanel; 
+export default CollapsiblePanel;

@@ -8,9 +8,9 @@ const TabsList: React.FC = () => {
   const { tabList, setCurrentTab } = useTabStore();
 
   return (
-    <CollapsiblePanel title="My Tabs" placement={CollapsiblePanelPlacement.LEFT}>
+    <CollapsiblePanel title="My Tabs" placement={CollapsiblePanelPlacement.LEFT} preferenceKey="tabsListCollapsed">
       <div className="p-4">
-       {newTabButton(setCurrentTab)}
+        {newTabButton(setCurrentTab)}
         {tabList.length === 0 ? (
           <p className="text-sm italic text-gray-300">No tabs saved yet</p>
         ) : (
@@ -22,8 +22,12 @@ const TabsList: React.FC = () => {
                 onClick={() => setCurrentTab(tab.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-ide-text truncate" title={tab.song || "Draft"}>{tab.song || "Draft"}</p>
-                  <p className="text-ide-text-muted truncate min-h-4" title={tab.artist}>{tab.artist}</p>
+                  <p className="font-medium text-ide-text truncate" title={tab.song || "Draft"}>
+                    {tab.song || "Draft"}
+                  </p>
+                  <p className="text-ide-text-muted truncate min-h-4" title={tab.artist}>
+                    {tab.artist}
+                  </p>
                 </div>
               </div>
             ))}
