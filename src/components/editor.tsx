@@ -25,7 +25,6 @@ const TabEditor: React.FC = () => {
   // editor state
   const [selection, setSelection] = useState(new Range());
   const [initialSelectionPosition, setInitialSelectionPosition] = useState(selection.start);
-  const [currentSelectionDirection, setCurrentSelectionDirection] = useState("rightDown" as SelectionDirection);
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -59,7 +58,7 @@ const TabEditor: React.FC = () => {
       return;
     }
     if (e.shiftKey) {
-      updateSelection(clickedPosition);
+      updateSelectionWithPosition(clickedPosition);
     } else {
       setSelection(new Range(clickedPosition));
       setInitialSelectionPosition(clickedPosition);
@@ -75,10 +74,10 @@ const TabEditor: React.FC = () => {
     if (!clickedPosition) {
       return;
     }
-    updateSelection(clickedPosition);
+    updateSelectionWithPosition(clickedPosition);
   };
 
-  const updateSelection = (position: Position) => {
+  const updateSelectionWithPosition = (position: Position) => {
     // if we are on the same cell, just select that cell
     if (position.equals(initialSelectionPosition)) {
       setSelection(new Range(position));
@@ -176,37 +175,43 @@ const TabEditor: React.FC = () => {
     return new Position(newLine, newChord, newString);
   };
 
+  const updateSelectionWithMove = (dline: number, dchord: number, dstring: number) => {
+    // if we are starting from regular cursor, special handling to just select the chord
+    if (selection.isSinglePosition()) {
+      setSelection(
+        new Range(
+          new Position(selection.start.line, selection.start.chord, 0),
+          new Position(selection.start.line, selection.start.chord, NUM_STRINGS - 1)
+        )
+      );
+      // setCurrentSelectionDirection(dline < 0 || dchord < 0 || dstring < 0 ? "leftUp" : "rightDown");
+    } else {
+      const selectionDirection =
+        selection.start.line < initialSelectionPosition.line || selection.start.chord < initialSelectionPosition.chord
+          ? "leftUp"
+          : "rightUp" as SelectionDirection;
+      
+      // apply the delta to the moving edge of the selection
+      let newPosition = calculateCursorMove(
+        selectionDirection === "leftUp" ? selection.start : selection.end,
+        dline || dstring, // when selecting whole rows, a string is just as good as an explicit line
+        dchord,
+        0
+      );
+      updateSelectionWithPosition(newPosition);
+    }
+  };
+
   const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean = false) => {
     commitEdit();
-
-    const prev = selection;
-
     if (shift) {
-      // if we are starting from regular cursor, special handling to just select the chord
-      if (prev.isSinglePosition()) {
-        const initialPosition = new Position(prev.start.line, prev.start.chord, 0);
-        setSelection(new Range(initialPosition, new Position(prev.start.line, prev.start.chord, NUM_STRINGS - 1)));
-        setInitialSelectionPosition(initialPosition);
-        setCurrentSelectionDirection(dline < 0 || dchord < 0 || dstring < 0 ? "leftUp" : "rightDown");
-      } else {
-        let newPosition = calculateCursorMove(
-          currentSelectionDirection === "leftUp" ? prev.start : prev.end,
-          dline,
-          dchord,
-          dstring
-        );
-        // check for flipping directions
-        if (currentSelectionDirection === "leftUp" && newPosition.isChordGreaterThan(initialSelectionPosition)) {
-          setCurrentSelectionDirection("rightDown");
-        } else if (currentSelectionDirection === "rightDown" && newPosition.isChordLessThan(initialSelectionPosition)) {
-          setCurrentSelectionDirection("leftUp");
-        }
-        updateSelection(newPosition);
-      }
+      updateSelectionWithMove(dline, dchord, dstring);
     }
     // simple cursor position update
     else {
-      setSelection(new Range(calculateCursorMove(prev.start, dline, dchord, dstring)));
+      const newPosition = calculateCursorMove(selection.start, dline, dchord, dstring);
+      setSelection(new Range(newPosition));
+      setInitialSelectionPosition(newPosition);
     }
   };
 
