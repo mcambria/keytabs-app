@@ -84,21 +84,16 @@ export class Range {
   }
 }
 
-export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => EMPTY_NOTE);
+export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => "");
 export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
 export const defaultTabLines = (): TabLines => [defaultTabLine()];
 
-const normalizeChordLength = (chord: Chord) => {
-  // TODO: this is going to have a problem with - in front
-  const stripped = chord.map((str) => str.replace(/-/g, ""));
-
-  // Find the maximum number of non-dash characters
-  const maxLength = Math.max(Math.max(...stripped.map((str) => str.length)), 1);
-
-  // TODO: this is causing the enter button to pad to here
-  // need to just pad it in the UI and then on export
-  // Pad each string to that length, counting only real characters
-  return stripped.map((str) => str.padEnd(maxLength, "-"));
+const normalizeChord = (chord: Chord) => {
+  return chord
+  // remove any trailing -
+  // return chord.map(str => str.replace(/-+$/, ""));
+  // this won't work, we need to reimplement the write buffer and then we could re-enable this
+  // otherwise it just immediately throws it out
 };
 
 export class TabModel {
@@ -111,7 +106,7 @@ export class TabModel {
   }
 
   getStringValue(position: Position): string {
-    return this.lines[position.line]?.[position.chord]?.[position.string] ?? EMPTY_NOTE;
+    return this.lines[position.line]?.[position.chord]?.[position.string] ?? "";
   }
 
   getChordValue(position: Position): Chord {
@@ -126,7 +121,7 @@ export class TabModel {
   }
 
   setChordValue(position: Position, value: Chord): void {
-    value = normalizeChordLength(value);
+    value = normalizeChord(value);
     this.lines[position.line][position.chord] = value;
   }
 
@@ -163,7 +158,7 @@ export class TabModel {
   }
 
   insertChords(position: Position, values: Chord[]): void {
-    const normalized = values.map(v => normalizeChordLength(v));
+    const normalized = values.map(v => normalizeChord(v));
     this.lines[position.line].splice(position.chord + 1, 0, ...normalized);
   }
 

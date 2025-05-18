@@ -287,14 +287,14 @@ const TabEditor: React.FC = () => {
         break;
       case "Backspace":
         if (isEditing) {
-          const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
+          const newValue = currentValue.slice(0, -1);
           model.setStringValue(selection.start, newValue);
           updateTabLines();
         } else {
           if (currentValue == BAR_DELIMITER || e.shiftKey) {
             model.deleteChord(selection.start);
           } else {
-            model.setStringValue(selection.start, EMPTY_NOTE);
+            model.setStringValue(selection.start, "");
           }
           updateTabLines();
           moveCursor(0, -1, 0);
@@ -302,7 +302,7 @@ const TabEditor: React.FC = () => {
         break;
       case "Delete":
         if (isEditing) {
-          const newValue = currentValue.slice(0, -1) || EMPTY_NOTE;
+          const newValue = currentValue.slice(0, -1);
           model.setStringValue(selection.start, newValue);
           updateTabLines();
         } else {
@@ -312,9 +312,8 @@ const TabEditor: React.FC = () => {
             model.deleteLine(selection.start);
             moveCursor(0, 0, 0);
           } else {
-            model.setStringValue(selection.start, EMPTY_NOTE);
+            model.setStringValue(selection.start, "");
           }
-          model.setStringValue(selection.start, EMPTY_NOTE);
           updateTabLines();
         }
         break;
@@ -335,7 +334,7 @@ const TabEditor: React.FC = () => {
     }
   };
 
-  const handleCopySelection = (e: React.KeyboardEvent) => {
+  const handleCopySelection = (_: React.KeyboardEvent) => {
     if (!hasFocus) {
       return;
     }
@@ -348,7 +347,7 @@ const TabEditor: React.FC = () => {
     navigator.clipboard.writeText(JSON.stringify(clipboardData));
   };
 
-  const handlePasteSelection = async (e: React.KeyboardEvent) => {
+  const handlePasteSelection = async (_: React.KeyboardEvent) => {
     if (!hasFocus) {
       return;
     }
@@ -441,39 +440,43 @@ const TabEditor: React.FC = () => {
                 </div>
               ))}
             </div>
-            {tabLine.map((chord, chordIndex) => (
-              <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
-                {chord.map((stringValue, stringIndex) => (
-                  <div
-                    key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                    data-line={lineIndex}
-                    data-chord={chordIndex}
-                    data-string={stringIndex}
-                    data-cell
-                    className={`flex text-center flex-nowrap ${
-                      selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                        ? "bg-pink-600"
-                        : ""
-                    }`}
-                  >
-                    <span className="relative">
-                      {stringValue}
-                      {isEditing &&
-                        // can only be in editing mode if the selection is just one long
-                        selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
-                        hasFocus && (
-                          <span
-                            className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink ${
-                              stringValue === EMPTY_NOTE ? "left-0" : ""
-                            }`}
-                          />
-                        )}
-                      {stringValue === BAR_DELIMITER ? "" : EMPTY_NOTE}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ))}
+            {tabLine.map((chord, chordIndex) => {
+              const maxChordLength = Math.max(...chord.map(str => str.length));
+              return (
+                <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
+                  {chord.map((stringValue, stringIndex) => (
+                    <div
+                      key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                      data-line={lineIndex}
+                      data-chord={chordIndex}
+                      data-string={stringIndex}
+                      data-cell
+                      className={`flex text-center flex-nowrap ${
+                        selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
+                          ? "bg-pink-600"
+                          : ""
+                      }`}
+                    >
+                      <span className="relative">
+                        {stringValue}
+                        {isEditing &&
+                          // can only be in editing mode if the selection is just one long
+                          selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
+                          hasFocus && (
+                            <span
+                              className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink right-0`}
+                            />
+                          )}
+                      </span>
+                      {
+                        // unless its a bar line, pad the end to match the chord + 1
+                        stringValue === BAR_DELIMITER ? "" : "".padEnd(maxChordLength - stringValue.length + 1, EMPTY_NOTE)
+                      }
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
             <div className="flex-col">
               {STRING_NAMES.map((_, stringIndex) => (
                 // +1 relative to length of the actual tab
