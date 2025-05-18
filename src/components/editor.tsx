@@ -167,7 +167,7 @@ const TabEditor: React.FC = () => {
 
     setSelection((prev) => {
       const prevStart = prev.start;
-      let newLine = prevStart.line;
+      let newLine = prevStart.line + dline;
       let newString = prevStart.string + dstring;
 
       // Handle string movement that would cross line boundaries
@@ -191,8 +191,19 @@ const TabEditor: React.FC = () => {
         }
       }
 
-      // Handle line movement
-      newLine = Math.max(0, Math.min(model.lines.length - 1, newLine + dline));
+      // Handle line movement that would reach the edge
+      if (dline !== 0) {
+        if (newLine < 0) {
+          newLine = 0;
+          newString = 0;
+        }
+        else if (newLine > model.lines.length - 1) {
+          newLine = model.lines.length - 1;
+          newString = NUM_STRINGS - 1;
+        }
+      }
+      
+      // don't wrap, just prevent it from moving past the edge
       const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, prevStart.chord + dchord));
 
       return new Range(new Position(newLine, newChord, newString));
