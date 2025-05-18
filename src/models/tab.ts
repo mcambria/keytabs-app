@@ -94,7 +94,7 @@ const normalizeChordLength = (chord: Chord) => {
 
   // Find the maximum number of non-dash characters
   const maxLength = Math.max(Math.max(...stripped.map((str) => str.length)), 1);
-  
+
   // TODO: this is causing the enter button to pad to here
   // need to just pad it in the UI and then on export
   // Pad each string to that length, counting only real characters
@@ -143,8 +143,12 @@ export class TabModel {
     line.splice(position.chord, 1);
   }
 
-  insertLine(position: Position): void {
-    this.lines.splice(position.line + 1, 0, defaultTabLine());
+  insertEmptyLine(position: Position): void {
+    this.insertLines(position, [defaultTabLine()]);
+  }
+
+  insertLines(position: Position, lines: TabLines): void {
+    this.lines.splice(position.line + 1, 0, ...lines);
   }
 
   deleteLine(position: Position): void {
@@ -155,8 +159,43 @@ export class TabModel {
   }
 
   insertChord(position: Position, value: Chord = defaultChord()): void {
-    value = normalizeChordLength(value);
-    this.lines[position.line].splice(position.chord + 1, 0, value);
+    this.insertChords(position, [value]);
+  }
+
+  insertChords(position: Position, values: Chord[]): void {
+    const normalized = values.map(v => normalizeChordLength(v));
+    this.lines[position.line].splice(position.chord + 1, 0, ...normalized);
+  }
+
+  getContent(range: Range): TabLines {
+    const linesInRange = this.lines.filter((_, lineIndex) => lineIndex >= range.start.line && lineIndex <= range.end.line);
+    if (linesInRange.length !== 1) {
+      // bit of a shortcut, but ranges are enforced to always be one line or all the chords in multiple lines
+      return linesInRange
+    }
+
+    const chordsInRange = linesInRange[0].filter((_, chordIndex) => chordIndex >= range.start.chord && chordIndex <= range.end.chord);
+    if (chordsInRange.length !== 1 || chordsInRange[0].length === NUM_STRINGS) {
+      // same idea here
+      return [chordsInRange];
+    }
+
+    // just selecting one note
+    return [[[chordsInRange[0][range.start.string]]]];
+  }
+
+  insertContent(selectedRange: Range, lines: TabLines, wholeLines: boolean) {
+    // one character is copied
+    if (lines.length === 1 && lines[0].length === 1 && lines[0][0].length === 1) {
+      this.setStringValue(selectedRange.start, lines[0][0][0]);
+    }
+    // can't know whether the whole line was selected or just chords just from the data
+    else if (lines.length === 1 && !wholeLines) {
+      this.insertChords(selectedRange.start, lines[0]);
+    }
+    else {
+      this.insertLines(selectedRange.start, lines);
+    }
   }
 
   clone(): TabModel {

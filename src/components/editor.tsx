@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
-import { useTabStore } from "@/services/tab-store";
+import { TabLines, useTabStore } from "@/services/tab-store";
 import { newTabButton } from "./new-tab-button";
 
 type SelectionDirection = "rightDown" | "leftUp";
+type ClipboardData = { isNative: true; lines: TabLines; wholeLines: boolean };
 
 const TabEditor: React.FC = () => {
   let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
@@ -57,9 +58,13 @@ const TabEditor: React.FC = () => {
     if (!clickedPosition) {
       return;
     }
-    setSelection(new Range(clickedPosition));
-    setInitialSelectionPosition(clickedPosition);
-    setIsSelecting(true);
+    if (e.shiftKey) {
+      updateSelection(clickedPosition);
+    } else {
+      setSelection(new Range(clickedPosition));
+      setInitialSelectionPosition(clickedPosition);
+      setIsSelecting(true);
+    }
   };
 
   const handleMouseOver = (e: React.MouseEvent) => {
@@ -266,7 +271,7 @@ const TabEditor: React.FC = () => {
       case "Enter":
         if (e.ctrlKey) {
           // Create a new line
-          model.insertLine(selection.start);
+          model.insertEmptyLine(selection.start);
           updateTabLines();
         } else if (e.shiftKey) {
           model.insertChord(selection.start);
@@ -316,12 +321,61 @@ const TabEditor: React.FC = () => {
       case "Escape":
         commitEdit();
         break;
+
+      case "c":
+        if (e.ctrlKey) {
+          handleCopySelection(e);
+        }
+        break;
+      case "v":
+        if (e.ctrlKey) {
+          handlePasteSelection(e);
+        }
+        break;
+    }
+  };
+
+  const handleCopySelection = (e: React.KeyboardEvent) => {
+    if (!hasFocus) {
+      return;
+    }
+    const selectedContent = model.getContent(selection);
+    const clipboardData: ClipboardData = {
+      isNative: true,
+      lines: selectedContent,
+      wholeLines: selectedContent.length > 1 || selectedContent[0].length === model.lines[selection.start.line].length,
+    };
+    navigator.clipboard.writeText(JSON.stringify(clipboardData));
+  };
+
+  const handlePasteSelection = async (e: React.KeyboardEvent) => {
+    if (!hasFocus) {
+      return;
+    }
+    const text = await navigator.clipboard.readText();
+    if (!text) {
+      return;
+    }
+    try {
+      const clipboardData = JSON.parse(text);
+      if (clipboardData.isNative && clipboardData.lines) {
+        model.insertContent(selection, clipboardData.lines, clipboardData.wholeLines);
+        updateTabLines();
+      }
+      // TODO: could totally add support for converting copied string into TabLines and insert it,
+      // will really only work for characters or lines though
+    } catch (e) {
+      console.log(`Tried to paste non-native content: ${text}`);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle navigation keys
-    if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape"].includes(e.key)) {
+    if (
+      ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape", "c", "v"].includes(
+        e.key
+      )
+    ) {
       handleNavigationKey(e);
       return;
     }
@@ -371,7 +425,7 @@ const TabEditor: React.FC = () => {
       >
         {model.lines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="flex mb-4">
-            <div className="flex-col">
+            <div className="flex-col flex-wrap">
               {STRING_NAMES.map((stringName, stringIndex) => (
                 // -2 relative to start of the actual tab
                 <div key={`${lineIndex}--2-${stringIndex}`} className="flex text-right text-ide-text-muted select-none">
@@ -396,7 +450,7 @@ const TabEditor: React.FC = () => {
                     data-chord={chordIndex}
                     data-string={stringIndex}
                     data-cell
-                    className={`flex text-center ${
+                    className={`flex text-center flex-nowrap ${
                       selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
                         ? "bg-pink-600"
                         : ""
