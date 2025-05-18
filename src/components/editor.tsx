@@ -184,22 +184,41 @@ const TabEditor: React.FC = () => {
           new Position(selection.start.line, selection.start.chord, NUM_STRINGS - 1)
         )
       );
-      // setCurrentSelectionDirection(dline < 0 || dchord < 0 || dstring < 0 ? "leftUp" : "rightDown");
-    } else {
-      const selectionDirection =
-        selection.start.line < initialSelectionPosition.line || selection.start.chord < initialSelectionPosition.chord
-          ? "leftUp"
-          : "rightUp" as SelectionDirection;
-      
-      // apply the delta to the moving edge of the selection
-      let newPosition = calculateCursorMove(
-        selectionDirection === "leftUp" ? selection.start : selection.end,
-        dline || dstring, // when selecting whole rows, a string is just as good as an explicit line
-        dchord,
-        0
-      );
-      updateSelectionWithPosition(newPosition);
+      return;
     }
+    // partial line is selected, select the whole line before moving to new lines
+    else if (
+      selection.start.line === selection.end.line &&
+      selection.end.chord - selection.start.chord < model.lines[selection.start.line].length - 1
+    ) {
+      if (dline !== 0 || dstring !== 0) {
+        setSelection(
+          new Range(
+            new Position(selection.start.line, 0, 0),
+            new Position(selection.start.line, model.lines[selection.start.line].length - 1, NUM_STRINGS - 1)
+          )
+        );
+        return;
+      }
+    }
+    // for other cases, we just re-use the existing position-based selection logic
+    let selectionDirection: SelectionDirection;
+    if (selection.start.line < initialSelectionPosition.line) {
+      selectionDirection = "leftUp";
+    } else if (selection.end.line > initialSelectionPosition.line) {
+      selectionDirection = "rightDown";
+    } else {
+      selectionDirection = selection.start.chord < initialSelectionPosition.chord ? "leftUp" : "rightDown";
+    }
+    const effectivedline = dstring ? dstring : dline;
+    // apply the delta to the moving edge of the selection
+    let newPosition = calculateCursorMove(
+      selectionDirection === "leftUp" ? selection.start : selection.end,
+      effectivedline,
+      dchord,
+      0
+    );
+    updateSelectionWithPosition(newPosition);
   };
 
   const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean = false) => {
