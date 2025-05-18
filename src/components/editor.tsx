@@ -1,24 +1,19 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
-import { TabData, useTabStore } from "@/services/tab-store";
+import { useTabStore } from "@/services/tab-store";
+import { newTabButton } from "./new-tab-button";
 
 const TabEditor: React.FC = () => {
-  let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
+  let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
+    useTabStore();
 
-  if (!currentTab) {
-    return (
-      <div>
-        <button onClick={() => {
-          const id = crypto.randomUUID();
-          // will create if it doesn't exist
-          setCurrentTab(id);
-        }}>Create New Tab</button>
-      </div>
-    );
+  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
+  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
+
+  const updateTabLines = () => {
+    saveCurrentTab(model.lines);
+    setModel(model.clone());
   }
-
-  const [model, setModel] = useState(new TabModel(currentTab));
-  const updateTabLines = () => setModel(model.clone());
 
   // editor state
   const [selection, setSelection] = useState(new Range());
@@ -332,6 +327,10 @@ const TabEditor: React.FC = () => {
     }
   };
 
+  if (!currentTab) {
+    return <div>{newTabButton(setCurrentTab)}</div>;
+  }
+
   return (
     <div>
       <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
@@ -427,7 +426,8 @@ const TabEditor: React.FC = () => {
         ))}
       </div>
       <div className="flex justify-end gap-4 ml-4 mr-4">
-        <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button>
+        {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
+        <button onClick={() => alert('Not implemented yet 🦎')}>Export Tab</button>
         <button onClick={() => deleteCurrentTab()}>Delete Tab</button>
       </div>
     </div>

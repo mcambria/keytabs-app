@@ -2,6 +2,7 @@ import React from "react";
 import CollapsiblePanel from "./collapsible-panel";
 import { CollapsiblePanelPlacement } from "./collapsible-panel";
 import { useTabStore } from "@/services/tab-store";
+import { newTabButton } from "./new-tab-button";
 
 const TabsList: React.FC = () => {
   const { tabList, setCurrentTab } = useTabStore();
@@ -9,16 +10,7 @@ const TabsList: React.FC = () => {
   return (
     <CollapsiblePanel title="My Tabs" placement={CollapsiblePanelPlacement.LEFT}>
       <div className="p-4">
-        <button
-          onClick={() => {
-            const id = crypto.randomUUID();
-            // will create if it doesn't exist
-            setCurrentTab(id);
-          }}
-          className="w-full mb-4 px-4 py-2 bg-ide-highlight text-ide-text rounded hover:bg-ide-highlight-hover transition-colors"
-        >
-          Create New Tab
-        </button>
+       {newTabButton(setCurrentTab)}
         {tabList.length === 0 ? (
           <p className="text-sm italic text-gray-300">No tabs saved yet</p>
         ) : (
@@ -26,7 +18,7 @@ const TabsList: React.FC = () => {
             {tabList.map((tab) => (
               <div
                 key={tab.id}
-                className="flex items-center justify-between p-2 bg-ide-bg-hover rounded hover:bg-ide-bg-hover-hover transition-colors"
+                className="flex items-center justify-between p-2 bg-ide-bg-hover cursor-pointer rounded hover:bg-ide-bg-hover-hover transition-colors"
                 onClick={() => setCurrentTab(tab.id)}
               >
                 <div className="flex-1 min-w-0">

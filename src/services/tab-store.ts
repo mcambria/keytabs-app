@@ -36,8 +36,8 @@ const saveTabContent = (tab: TabData) => {
     localStorage.setItem(makeTabStorageId(tab.id), JSON.stringify(tab));
 }
 
-const saveTabMetadata = (tabslist: TabMetadata[]) => {
-    localStorage.setItem(TAB_METADATA_STORAGE_KEY, JSON.stringify(tabslist));
+const saveTabMetadata = (tabList: TabMetadata[]) => {
+    localStorage.setItem(TAB_METADATA_STORAGE_KEY, JSON.stringify(tabList));
 }
 
 const saveCurrentTabId = (id: string) => {
@@ -92,23 +92,23 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tab = { id: id, lines: defaultTabLines() }
             saveTabContent(tab);
         }
-        
+
         // these if/elses should be mutually exclusive but its simpler to not care about that
 
         // if it doesn't exist in the local cache, create the metadata entry
-        const tabsList = get().tabList;
-        const storedMetadata = tabsList.find(m => m.id == initialCurrentTabId);
+        const tabList = get().tabList;
+        const storedMetadata = tabList.find(m => m.id == id);
         let tabMetadata: TabMetadata;
         if (storedMetadata) {
             tabMetadata = storedMetadata
         }
         else {
             tabMetadata = { id: id, song: '', artist: '' };
-            tabsList.unshift(tabMetadata);
-            saveTabMetadata(tabsList);
+            tabList.unshift(tabMetadata);
+            saveTabMetadata(tabList);
         }
 
-        set({ currentTab: tab, currentTabMetadata: tabMetadata, tabList: tabsList });
+        set({ currentTab: tab, currentTabMetadata: tabMetadata, tabList: [...tabList] });
         saveCurrentTabId(tab.id);
     },
 
@@ -121,6 +121,9 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         const tab = { id: id, lines: lines };
         saveTabContent(tab);
         set({ currentTab: tab });
+
+        // save the metadata changes, they are already in the local state
+        saveTabMetadata(get().tabList);
     },
 
     deleteCurrentTab: () => {
@@ -130,13 +133,13 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             return;
         }
 
-        const tabList = state.tabList;
+        let tabList = state.tabList;
         const metadataIndex = tabList.findIndex(m => m.id == id);
         if (metadataIndex) {
             tabList.splice(metadataIndex, 1);
             saveTabMetadata(tabList);
         }
-        
+
         localStorage.removeItem(makeTabStorageId(id));
         localStorage.removeItem(CURRENT_TAB_ID_STORAGE_KEY);
 
@@ -145,10 +148,22 @@ export const useTabStore = create<TabContentState>((set, get) => ({
 
     updateTabMetadata: (id: string, updates: Partial<TabMetadata>) => {
         const tabList = get().tabList;
-        let metadata = tabList.find(m => m.id == id);
-        if (metadata) {
-            metadata = { ...metadata, ...updates };
+        let index = tabList.findIndex(m => m.id === id);
+        if (index === -1) {
+            return;
         }
-        set({ tabList: [...tabList] });
+
+        let metadata = tabList[index];
+        let currentMetadata = get().currentTabMetadata;
+        metadata = { ...metadata, ...updates };
+        // update in the list
+        tabList[index] = metadata;
+        // update the current if that's what we're editing
+        if (currentMetadata?.id === id) {
+            currentMetadata = { ...metadata };
+        }
+        
+        set({ tabList: [...tabList], currentTabMetadata: currentMetadata });
+        saveTabMetadata(tabList);
     }
 }));
