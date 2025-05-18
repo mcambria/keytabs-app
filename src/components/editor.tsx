@@ -17,7 +17,7 @@ const TabEditor: React.FC = () => {
     // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
     saveCurrentTab(model.lines);
     setModel(model.clone());
-  }
+  };
 
   // editor state
   const [selection, setSelection] = useState(new Range());
@@ -127,52 +127,75 @@ const TabEditor: React.FC = () => {
     setIsSelecting(false);
   };
 
-  const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean) => {
-    commitEdit();
+  const calculateCursorMove = (from: Position, dline: number, dchord: number, dstring: number) => {
+    let newLine = from.line + dline;
+    let newString = from.string + dstring;
 
-    setSelection((prev) => {
-      const prevStart = prev.start;
-      let newLine = prevStart.line + dline;
-      let newString = prevStart.string + dstring;
-
-      // Handle string movement that would cross line boundaries
-      if (dstring !== 0) {
-        if (newString < 0) {
-          // Moving up past the first string
-          if (newLine > 0) {
-            newLine--;
-            newString = NUM_STRINGS - 1;
-          } else {
-            newString = 0;
-          }
-        } else if (newString >= NUM_STRINGS) {
-          // Moving down past the last string
-          if (newLine < model.lines.length - 1) {
-            newLine++;
-            newString = 0;
-          } else {
-            newString = NUM_STRINGS - 1;
-          }
-        }
-      }
-
-      // Handle line movement that would reach the edge
-      if (dline !== 0) {
-        if (newLine < 0) {
-          newLine = 0;
+    // Handle string movement that would cross line boundaries
+    if (dstring !== 0) {
+      if (newString < 0) {
+        // Moving up past the first string
+        if (newLine > 0) {
+          newLine--;
+          newString = NUM_STRINGS - 1;
+        } else {
           newString = 0;
         }
-        else if (newLine > model.lines.length - 1) {
-          newLine = model.lines.length - 1;
+      } else if (newString >= NUM_STRINGS) {
+        // Moving down past the last string
+        if (newLine < model.lines.length - 1) {
+          newLine++;
+          newString = 0;
+        } else {
           newString = NUM_STRINGS - 1;
         }
       }
-      
-      // don't wrap, just prevent it from moving past the edge
-      const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, prevStart.chord + dchord));
+    }
 
-      return new Range(new Position(newLine, newChord, newString));
-    });
+    // Handle line movement that would reach the edge
+    if (dline !== 0) {
+      if (newLine < 0) {
+        newLine = 0;
+        newString = 0;
+      } else if (newLine > model.lines.length - 1) {
+        newLine = model.lines.length - 1;
+        newString = NUM_STRINGS - 1;
+      }
+    }
+    // don't wrap, just prevent it from moving past the edge
+    const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, from.chord + dchord));
+
+    return new Position(newLine, newChord, newString);
+  };
+
+  const moveCursor = (
+    dline: number,
+    dchord: number,
+    dstring: number,
+    shift: boolean = false,
+  ) => {
+    commitEdit();
+
+    const prev = selection;
+
+    if (shift) {
+      // if we are starting from regular cursor, special handling to just select the chord
+      if (prev.isSinglePosition()) {
+        setSelection(
+          new Range(
+            new Position(prev.start.line, prev.start.chord, 0),
+            new Position(prev.start.line, prev.start.chord, NUM_STRINGS - 1)
+          )
+        );
+      } else {
+        const startingPoint = dline < 0 || dchord < 0 || dstring < 0 ? prev.start : prev.end;
+        updateSelection(calculateCursorMove(startingPoint, dline, dchord, dstring));
+      }
+    }
+    // simple cursor position update
+    else {
+      setSelection(new Range(calculateCursorMove(prev.start, dline, dchord, dstring)));
+    }
   };
 
   const startEditing = () => {
@@ -190,7 +213,7 @@ const TabEditor: React.FC = () => {
     const key = e.key;
     if (key == "|") {
       model.insertBarLine(selection.start);
-      moveCursor(0, 2, 0, e.shiftKey);
+      moveCursor(0, 2, 0);
       updateTabLines();
       return;
     }
@@ -243,6 +266,7 @@ const TabEditor: React.FC = () => {
           updateTabLines();
         } else {
           if (isEditing) {
+            moveCursor(0, 0, 0);
             commitEdit();
           } else {
             startEditing();
@@ -261,7 +285,7 @@ const TabEditor: React.FC = () => {
             model.setStringValue(selection.start, EMPTY_NOTE);
           }
           updateTabLines();
-          moveCursor(0, -1, 0, false);
+          moveCursor(0, -1, 0);
         }
         break;
       case "Delete":
@@ -274,7 +298,7 @@ const TabEditor: React.FC = () => {
             model.deleteChord(selection.start);
           } else if (e.ctrlKey) {
             model.deleteLine(selection.start);
-            moveCursor(0, 0, 0, false);
+            moveCursor(0, 0, 0);
           } else {
             model.setStringValue(selection.start, EMPTY_NOTE);
           }
@@ -402,7 +426,7 @@ const TabEditor: React.FC = () => {
       </div>
       <div className="flex justify-end gap-4 ml-4 mr-4">
         {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
-        <button onClick={() => alert('Not implemented yet 🦎')}>Export Tab</button>
+        <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
         <button onClick={() => deleteCurrentTab()}>Delete Tab</button>
       </div>
     </div>
