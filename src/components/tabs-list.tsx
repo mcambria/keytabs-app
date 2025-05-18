@@ -22,8 +22,8 @@ const TabsList: React.FC = () => {
                 onClick={() => setCurrentTab(tab.id)}
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-ide-text truncate">{tab.song || "Draft"}</p>
-                  <p className="text-xs text-ide-text-muted truncate">{tab.artist}</p>
+                  <p className="font-medium text-ide-text truncate" title={tab.song || "Draft"}>{tab.song || "Draft"}</p>
+                  <p className="text-ide-text-muted truncate min-h-4" title={tab.artist}>{tab.artist}</p>
                 </div>
               </div>
             ))}
