@@ -299,8 +299,8 @@ const TabEditor: React.FC = () => {
         break;
       case "Escape":
         commitEdit();
+        setSelection(new Range(selection.start));
         break;
-
       case "c":
         if (e.ctrlKey) {
           handleCopySelection(e);
