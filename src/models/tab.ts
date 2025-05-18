@@ -31,6 +31,10 @@ export class Position {
     return this.chord > position.chord;
   }
 
+  isChordLessThan(position: Position): boolean {
+    return !this.isGreaterThanOrEqualTo(position);
+  }
+
   isChordGreaterThanOrEqualTo(position: Position): boolean {
     return this.equals(position) || this.isChordGreaterThan(position);
   }

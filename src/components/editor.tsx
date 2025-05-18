@@ -3,6 +3,8 @@ import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, 
 import { useTabStore } from "@/services/tab-store";
 import { newTabButton } from "./new-tab-button";
 
+type SelectionDirection = "rightDown" | "leftUp";
+
 const TabEditor: React.FC = () => {
   let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
     useTabStore();
@@ -22,6 +24,7 @@ const TabEditor: React.FC = () => {
   // editor state
   const [selection, setSelection] = useState(new Range());
   const [initialSelectionPosition, setInitialSelectionPosition] = useState(selection.start);
+  const [currentSelectionDirection, setCurrentSelectionDirection] = useState("rightDown" as SelectionDirection);
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -168,12 +171,7 @@ const TabEditor: React.FC = () => {
     return new Position(newLine, newChord, newString);
   };
 
-  const moveCursor = (
-    dline: number,
-    dchord: number,
-    dstring: number,
-    shift: boolean = false,
-  ) => {
+  const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean = false) => {
     commitEdit();
 
     const prev = selection;
@@ -181,15 +179,24 @@ const TabEditor: React.FC = () => {
     if (shift) {
       // if we are starting from regular cursor, special handling to just select the chord
       if (prev.isSinglePosition()) {
-        setSelection(
-          new Range(
-            new Position(prev.start.line, prev.start.chord, 0),
-            new Position(prev.start.line, prev.start.chord, NUM_STRINGS - 1)
-          )
-        );
+        const initialPosition = new Position(prev.start.line, prev.start.chord, 0);
+        setSelection(new Range(initialPosition, new Position(prev.start.line, prev.start.chord, NUM_STRINGS - 1)));
+        setInitialSelectionPosition(initialPosition);
+        setCurrentSelectionDirection(dline < 0 || dchord < 0 || dstring < 0 ? "leftUp" : "rightDown");
       } else {
-        const startingPoint = dline < 0 || dchord < 0 || dstring < 0 ? prev.start : prev.end;
-        updateSelection(calculateCursorMove(startingPoint, dline, dchord, dstring));
+        let newPosition = calculateCursorMove(
+          currentSelectionDirection === "leftUp" ? prev.start : prev.end,
+          dline,
+          dchord,
+          dstring
+        );
+        // check for flipping directions
+        if (currentSelectionDirection === "leftUp" && newPosition.isChordGreaterThan(initialSelectionPosition)) {
+          setCurrentSelectionDirection("rightDown");
+        } else if (currentSelectionDirection === "rightDown" && newPosition.isChordLessThan(initialSelectionPosition)) {
+          setCurrentSelectionDirection("leftUp");
+        }
+        updateSelection(newPosition);
       }
     }
     // simple cursor position update
