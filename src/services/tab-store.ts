@@ -12,7 +12,8 @@ export type TabData = {
 export type TabMetadata = {
     id: string;
     song: string;
-    artist: string
+    artist: string,
+    lastModified: number
 };
 
 type TabContentStoreState = {
@@ -103,7 +104,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tabMetadata = storedMetadata
         }
         else {
-            tabMetadata = { id: id, song: '', artist: '' };
+            tabMetadata = { id: id, song: '', artist: '', lastModified: Date.now() };
             tabList.unshift(tabMetadata);
             saveTabMetadata(tabList);
         }
@@ -135,7 +136,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
 
         let tabList = state.tabList;
         const metadataIndex = tabList.findIndex(m => m.id == id);
-        if (metadataIndex) {
+        if (metadataIndex !== -1) {
             tabList.splice(metadataIndex, 1);
             saveTabMetadata(tabList);
         }
