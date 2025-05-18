@@ -7,10 +7,14 @@ const TabEditor: React.FC = () => {
   let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
     useTabStore();
 
+  // this empty tab model will never be used
+  // but React doesn't like it when you short-circuit creating a different amount of hooks each render
   const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
   useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
 
   const updateTabLines = () => {
+    // this saving model is very aggressive
+    // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
     saveCurrentTab(model.lines);
     setModel(model.clone());
   }
@@ -22,6 +26,7 @@ const TabEditor: React.FC = () => {
   const [hasFocus, setHasFocus] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
 
+  // event handlers
   const handleFocus = () => {
     // wait 100ms to try to let the mouse handlers go first and avoid flashing old position when clicking back in
     setTimeout(() => setHasFocus(true), 100);
@@ -60,7 +65,6 @@ const TabEditor: React.FC = () => {
     }
     const clickedPosition = positionFromTarget(e.target as HTMLElement);
     if (!clickedPosition) {
-      // TODO: I'm not actually sure what this means, don't do anything for now
       return;
     }
     updateSelection(clickedPosition);
@@ -121,45 +125,6 @@ const TabEditor: React.FC = () => {
 
   const handleMouseUp = () => {
     setIsSelecting(false);
-  };
-
-  const setCursor = (position: Position, shift: boolean) => {
-    if (shift) {
-      updateSelection(position);
-    } else {
-      setSelection(new Range(position));
-    }
-  };
-
-  const calculateNewPosition = (dline: number, dchord: number, dstring: number) => {
-    const prevStart = initialSelectionPosition;
-    let newLine = prevStart.line;
-    let newString = prevStart.string + dstring;
-
-    // Handle string movement that would cross line boundaries
-    if (dstring !== 0) {
-      if (newString < 0) {
-        // Moving up past the first string
-        if (newLine > 0) {
-          newLine--;
-          newString = NUM_STRINGS - 1;
-        } else {
-          newString = 0;
-        }
-      } else if (newString >= NUM_STRINGS) {
-        // Moving down past the last string
-        if (newLine < model.lines.length - 1) {
-          newLine++;
-          newString = 0;
-        } else {
-          newString = NUM_STRINGS - 1;
-        }
-      }
-    }
-
-    // Handle line movement
-    newLine = Math.max(0, Math.min(model.lines.length - 1, newLine + dline));
-    const newChord = Math.max(0, Math.min(model.lines[newLine].length - 1, prevStart.chord + dchord));
   };
 
   const moveCursor = (dline: number, dchord: number, dstring: number, shift: boolean) => {
@@ -318,7 +283,6 @@ const TabEditor: React.FC = () => {
         }
         break;
       case "Escape":
-        // TODO: should this cancel the selection and resume to start or end?
         commitEdit();
         break;
     }
@@ -332,7 +296,7 @@ const TabEditor: React.FC = () => {
     }
 
     // Handle input keys (numbers and special characters)
-    if (/^[0-9]$/.test(e.key) || ["|", "h", "p"].includes(e.key)) {
+    if (/^[0-9]$/.test(e.key) || ["|", "h", "p", "/", "-", "(", ")", "<", ">"].includes(e.key)) {
       e.preventDefault();
       handleInputKey(e);
     }
