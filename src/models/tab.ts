@@ -193,6 +193,10 @@ export class TabModel {
     }
   }
 
+  clearContent(selectedRange: Range) {
+    // TODO: the for loop was never going to work right
+  }
+
   clone(): TabModel {
     // TODO: consider using structuredClone window api instead
     // TODO: consider marking lines as dirty and only making new copies of those since 

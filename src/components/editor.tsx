@@ -286,35 +286,15 @@ const TabEditor: React.FC = () => {
         }
         break;
       case "Backspace":
-        if (isEditing) {
-          const newValue = currentValue.slice(0, -1);
-          model.setStringValue(selection.start, newValue);
-          updateTabLines();
-        } else {
-          if (currentValue == BAR_DELIMITER || e.shiftKey) {
-            model.deleteChord(selection.start);
-          } else {
-            model.setStringValue(selection.start, "");
-          }
-          updateTabLines();
+        removeContent(currentValue, e.shiftKey);
+        if (!isEditing) {
           moveCursor(0, -1, 0);
         }
         break;
       case "Delete":
-        if (isEditing) {
-          const newValue = currentValue.slice(0, -1);
-          model.setStringValue(selection.start, newValue);
-          updateTabLines();
-        } else {
-          if (currentValue == BAR_DELIMITER || e.shiftKey) {
-            model.deleteChord(selection.start);
-          } else if (e.ctrlKey) {
-            model.deleteLine(selection.start);
-            moveCursor(0, 0, 0);
-          } else {
-            model.setStringValue(selection.start, "");
-          }
-          updateTabLines();
+        removeContent(currentValue, e.shiftKey);
+        if (!isEditing) {
+          moveCursor(0, 0, 0);
         }
         break;
       case "Escape":
@@ -332,6 +312,25 @@ const TabEditor: React.FC = () => {
         }
         break;
     }
+  };
+
+  const removeContent = (currentValue: string, shift: boolean) => {
+    if (isEditing) {
+      const newValue = currentValue.slice(0, -1);
+      model.setStringValue(selection.start, newValue);
+    } else {
+      if (selection.isSinglePosition()) {
+        if (currentValue == BAR_DELIMITER || shift) {
+          model.deleteChord(selection.start);
+        } else {
+          model.setStringValue(selection.start, "");
+        }
+      } else {
+        // currently doesn't do anything
+        model.clearContent(selection);
+      }
+    }
+    updateTabLines();
   };
 
   const handleCopySelection = (_: React.KeyboardEvent) => {
@@ -441,7 +440,7 @@ const TabEditor: React.FC = () => {
               ))}
             </div>
             {tabLine.map((chord, chordIndex) => {
-              const maxChordLength = Math.max(...chord.map(str => str.length));
+              const maxChordLength = Math.max(...chord.map((str) => str.length));
               return (
                 <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
                   {chord.map((stringValue, stringIndex) => (
@@ -463,14 +462,14 @@ const TabEditor: React.FC = () => {
                           // can only be in editing mode if the selection is just one long
                           selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
                           hasFocus && (
-                            <span
-                              className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink right-0`}
-                            />
+                            <span className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink right-0`} />
                           )}
                       </span>
                       {
                         // unless its a bar line, pad the end to match the chord + 1
-                        stringValue === BAR_DELIMITER ? "" : "".padEnd(maxChordLength - stringValue.length + 1, EMPTY_NOTE)
+                        stringValue === BAR_DELIMITER
+                          ? ""
+                          : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
                       }
                     </div>
                   ))}
