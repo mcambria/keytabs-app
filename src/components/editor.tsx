@@ -446,27 +446,25 @@ const TabEditor: React.FC = () => {
         onMouseUp={handleMouseUp}
       >
         {model.lines.map((tabLine, lineIndex) => (
-          <div key={`${lineIndex}`} className="flex mb-4">
-            <div className="flex-col flex-wrap">
+          <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+            <div>
               {STRING_NAMES.map((stringName, stringIndex) => (
                 // -2 relative to start of the actual tab
-                <div key={`${lineIndex}--2-${stringIndex}`} className="flex text-right text-ide-text-muted select-none">
+                <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
                   {stringName}
                 </div>
               ))}
             </div>
-            <div className="flex-col">
+            <div>
               {STRING_NAMES.map((_, stringIndex) => (
                 // -1 relative to start of the actual tab
-                <div key={`${lineIndex}-1-${stringIndex}`} className="flex text-center">
-                  |
-                </div>
+                <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
               ))}
             </div>
             {tabLine.map((chord, chordIndex) => {
               const maxChordLength = Math.max(...chord.map((str) => str.length));
               return (
-                <div key={`${lineIndex}-${chordIndex}`} className="flex-col">
+                <div key={`${lineIndex}-${chordIndex}`}>
                   {chord.map((stringValue, stringIndex) => (
                     <div
                       key={`${lineIndex}-${chordIndex}-${stringIndex}`}
@@ -500,12 +498,10 @@ const TabEditor: React.FC = () => {
                 </div>
               );
             })}
-            <div className="flex-col">
+            <div>
               {STRING_NAMES.map((_, stringIndex) => (
                 // +1 relative to length of the actual tab
-                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`} className="flex text-center">
-                  |
-                </div>
+                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
               ))}
             </div>
           </div>
