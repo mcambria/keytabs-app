@@ -482,7 +482,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
                       data-cell
                       className={`flex text-center flex-nowrap ${
                         selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                          ? "bg-pink-600"
+                          ? "bg-ide-cursor"
                           : ""
                       }`}
                     >
@@ -492,7 +492,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
                           // can only be in editing mode if the selection is just one long
                           selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
                           hasFocus && (
-                            <span className={`absolute top-0 w-[2px] h-5 bg-pink-600 animate-blink right-0`} />
+                            <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
                           )}
                       </span>
                       {

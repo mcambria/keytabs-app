@@ -24,6 +24,7 @@ export default {
               subtle: '#9d7fad',     // Very muted purple for secondary text
             }
           },
+          cursor: '#9d7fad',
         },
       },
       keyframes: {

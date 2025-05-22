@@ -9,7 +9,7 @@ type TabsListProps = {
 };
 
 const TabsList: React.FC<TabsListProps> = ({ className = "" }) => {
-  const { tabList, setCurrentTab } = useTabStore();
+  const { tabList, setCurrentTab, currentTab } = useTabStore();
 
   return (
     <CollapsiblePanel
@@ -26,11 +26,20 @@ const TabsList: React.FC<TabsListProps> = ({ className = "" }) => {
           {tabList.map((tab) => (
             <div
               key={tab.id}
-              className="flex items-center justify-between p-2 bg-ide-bg cursor-pointer rounded hover:bg-ide-bg-hover transition-colors"
+              className={`flex items-center justify-between p-2 cursor-pointer rounded transition-colors ${
+                tab.id === currentTab?.id
+                  ? "bg-ide-bg-hover text-ide-text-accent-primary"
+                  : "bg-ide-bg hover:bg-ide-bg-hover"
+              }`}
               onClick={() => setCurrentTab(tab.id)}
             >
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-ide-text truncate" title={tab.song || "Draft"}>
+                <p
+                  className={`font-medium truncate ${
+                    tab.id === currentTab?.id ? "text-ide-text-accent-primary" : "text-ide-text"
+                  }`}
+                  title={tab.song || "Draft"}
+                >
                   {tab.song || "Draft"}
                 </p>
                 <p className="text-ide-text-muted truncate min-h-4" title={tab.artist}>
