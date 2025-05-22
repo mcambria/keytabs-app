@@ -310,13 +310,13 @@ const TabEditor: React.FC = () => {
         }
         break;
       case "Backspace":
-        removeContent(currentValue, e.shiftKey);
+        removeContent(currentValue, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
           moveCursor(0, -1, 0);
         }
         break;
       case "Delete":
-        removeContent(currentValue, e.shiftKey);
+        removeContent(currentValue, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
           moveCursor(0, 0, 0);
         }
@@ -338,7 +338,7 @@ const TabEditor: React.FC = () => {
     }
   };
 
-  const removeContent = (currentValue: string, shift: boolean) => {
+  const removeContent = (currentValue: string, shift: boolean, control: boolean) => {
     if (isEditing) {
       const newValue = currentValue.slice(0, -1);
       model.setStringValue(selection.start, newValue);
@@ -346,6 +346,8 @@ const TabEditor: React.FC = () => {
       if (selection.isSinglePosition()) {
         if (currentValue == BAR_DELIMITER || shift) {
           model.deleteChord(selection.start);
+        } else if (control) {
+          model.deleteLine(selection.start);
         } else {
           model.setStringValue(selection.start, "");
         }
