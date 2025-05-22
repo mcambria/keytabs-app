@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useUserStore } from "@/services/user-store";
 
-interface CollapsiblePanelProps {
+type CollapsiblePanelProps = {
   title: string;
   children: React.ReactNode;
+  className?: string;
   defaultWidth?: string;
   collapsedWidth?: string;
   placement: CollapsiblePanelPlacement;
   preferenceKey: "tabsListCollapsed" | "keybindingsCollapsed";
-}
+};
 
 export enum CollapsiblePanelPlacement {
   LEFT = "left",
@@ -18,6 +19,7 @@ export enum CollapsiblePanelPlacement {
 const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   title,
   children,
+  className = "",
   defaultWidth = "w-1/5",
   collapsedWidth = "w-12",
   placement,
@@ -49,7 +51,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
 
   return (
     <div
-      className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 ${
+      className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 flex flex-col ${className ?? ""} ${
         isCollapsed ? collapsedWidth : defaultWidth
       }`}
     >

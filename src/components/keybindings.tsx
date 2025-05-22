@@ -2,14 +2,21 @@ import React from "react";
 import CollapsiblePanel from "./collapsible-panel";
 import { CollapsiblePanelPlacement } from "./collapsible-panel";
 
-const Keybindings: React.FC = () => {
+type KeyBindingsProps = {
+  className?: string;
+}
+
+const Keybindings: React.FC<KeyBindingsProps> = ({
+  className = ""
+}) => {
   return (
     <CollapsiblePanel
       title="Keybindings"
       placement={CollapsiblePanelPlacement.RIGHT}
       preferenceKey="keybindingsCollapsed"
+      className={className}
     >
-      <div className="text-ide-text">
+      <div className="text-ide-text overflow-y-auto">
         <div className="mb-4">
           <h3 className="text-lg font-medium mb-2 text-ide-text">Navigation</h3>
           <ul className="space-y-2">

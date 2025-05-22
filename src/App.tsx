@@ -6,16 +6,14 @@ function App() {
   return (
     <div className="min-h-screen bg-ide-bg">
       <div className="flex h-screen">
-        <TabsList />
+        <TabsList className="h-full"/>
         <div className="flex-1 flex flex-col">
-          <div className="p-4 border-b border-ide-highlight">
+          <div className="h-full p-4 border-b border-ide-highlight">
             <h1 className="text-xl font-medium text-ide-text">KeyTabs</h1>
           </div>
-          <div className="flex-1 p-4">
-            <TabEditor />
-          </div>
+          <TabEditor className="flex-1 p-4" />
         </div>
-        <Keybindings />
+        <Keybindings className="h-full" />
       </div>
     </div>
   );
