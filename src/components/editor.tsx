@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
-import { NewTabButton } from "./new-tab-button";
 
 type SelectionDirection = "rightDown" | "leftUp";
 type ClipboardData = { isNative: true; lines: TabLines; wholeLines: boolean };
