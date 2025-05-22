@@ -416,8 +416,8 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   if (!currentTab) {
     return (
-      <div className={className}>
-        <NewTabButton />
+      <div className={`flex flex-col justify-center items-center text-xl ide-text-muted ${className}`}>
+        Select a tab! 🎸
       </div>
     );
   }
