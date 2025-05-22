@@ -11,8 +11,7 @@ type TabEditorProps = {
 };
 
 const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
-  let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
-    useTabStore();
+  let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
   // this empty tab model will never be used
   // but React doesn't like it when you short-circuit creating a different amount of hooks each render
@@ -446,7 +445,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         />
       </div>
       <div
-        className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none"
+        className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none custom-scrollbar"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}

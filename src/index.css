@@ -6,4 +6,25 @@
   body {
     @apply bg-ide-bg text-ide-text;
   }
-} 
+}
+
+@layer components {
+  /* Custom scrollbar styles */
+  .custom-scrollbar {
+    @apply overflow-auto;
+    scrollbar-width: thin;
+    scrollbar-color: theme("colors.ide.highlight") theme("colors.ide.bg");
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-ide-bg;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-ide-highlight rounded-full hover:bg-ide-text-muted transition-colors;
+  }
+}
