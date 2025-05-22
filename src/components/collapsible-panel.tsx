@@ -43,7 +43,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
       placement === CollapsiblePanelPlacement.LEFT ? (isCollapsed ? "→" : "←") : isCollapsed ? "←" : "→";
 
     return (
-      <button onClick={handleCollapse} className="text-ide-text-muted hover:text-ide-text transition-colors">
+      <button onClick={handleCollapse} className="text-ide-text-muted hover:text-ide-text transition-colors text-3xl">
         {arrowIcon}
       </button>
     );
