@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
-import { newTabButton } from "./new-tab-button";
+import { NewTabButton } from "./new-tab-button";
 
 type SelectionDirection = "rightDown" | "leftUp";
 type ClipboardData = { isNative: true; lines: TabLines; wholeLines: boolean };
 
-const TabEditor: React.FC = () => {
-  let { currentTab, currentTabMetadata, setCurrentTab, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
+type TabEditorProps = {
+  className?: string;
+};
+
+const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
+  let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } =
     useTabStore();
 
   // this empty tab model will never be used
@@ -412,12 +416,16 @@ const TabEditor: React.FC = () => {
   };
 
   if (!currentTab) {
-    return <div>{newTabButton(setCurrentTab)}</div>;
+    return (
+      <div className={className}>
+        <NewTabButton />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex justify-between gap-4 ml-4 mr-4 mb-4">
+    <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
+      <div className="flex flex-none justify-between gap-4 ml-4 mr-4 mb-4">
         <input
           type="text"
           value={currentTabMetadata?.song ?? ""}
@@ -438,7 +446,7 @@ const TabEditor: React.FC = () => {
         />
       </div>
       <div
-        className="outline-none inline-block font-mono text-ide-text select-none"
+        className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none"
         tabIndex={0}
         onKeyDown={handleKeyDown}
         onFocus={handleFocus}
@@ -509,7 +517,7 @@ const TabEditor: React.FC = () => {
           </div>
         ))}
       </div>
-      <div className="flex justify-end gap-4 ml-4 mr-4">
+      <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
         {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
         <button onClick={() => deleteCurrentTab()}>Delete Tab</button>
