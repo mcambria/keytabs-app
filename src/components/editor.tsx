@@ -30,6 +30,12 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [hasFocus, setHasFocus] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Reset delete confirmation when tab changes
+  useEffect(() => {
+    setShowDeleteConfirm(false);
+  }, [currentTab]);
 
   // event handlers
   const handleFocus = () => {
@@ -413,6 +419,15 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     }
   };
 
+  const handleDeleteClick = () => {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true);
+      return;
+    }
+    deleteCurrentTab();
+    setShowDeleteConfirm(false);
+  };
+
   if (!currentTab) {
     return (
       <div className={`flex flex-col justify-center items-center text-xl ide-text-muted ${className}`}>
@@ -429,6 +444,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           value={currentTabMetadata?.song ?? ""}
           onChange={(e) => {
             updateTabMetadata(currentTab.id, { song: e.target.value });
+            setShowDeleteConfirm(false);
           }}
           placeholder="Song"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
@@ -438,6 +454,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           value={currentTabMetadata?.artist ?? ""}
           onChange={(e) => {
             updateTabMetadata(currentTab.id, { artist: e.target.value });
+            setShowDeleteConfirm(false);
           }}
           placeholder="Artist"
           className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
@@ -518,7 +535,12 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
         {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
-        <button className="text-ide-text-destructive" onClick={() => deleteCurrentTab()}>Delete Tab</button>
+        <button
+          className={`${showDeleteConfirm ? "p-1 bg-ide-text-destructive text-white" : "text-ide-text-destructive"}`}
+          onClick={handleDeleteClick}
+        >
+          {showDeleteConfirm ? "Click again to confirm" : "Delete Tab"}
+        </button>
       </div>
     </div>
   );
