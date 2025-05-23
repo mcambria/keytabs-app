@@ -18,9 +18,9 @@ export default {
             DEFAULT: '#cbd5e0',
             muted: '#94a3b8',
             accent: '#c4a777',
-            destructive: '#b91c1c'
+            destructive: '#d06c75'
           },
-          cursor: '#e2b93b',
+          cursor: '#7f61bb',
         },
       },
       keyframes: {
