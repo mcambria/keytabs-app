@@ -89,11 +89,8 @@ export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, 
 export const defaultTabLines = (): TabLines => [defaultTabLine()];
 
 const normalizeChord = (chord: Chord) => {
+  // NOOP placeholder
   return chord
-  // remove any trailing -
-  // return chord.map(str => str.replace(/-+$/, ""));
-  // this won't work, we need to reimplement the write buffer and then we could re-enable this
-  // otherwise it just immediately throws it out
 };
 
 export class TabModel {
@@ -194,7 +191,7 @@ export class TabModel {
   }
 
   clearContent(selectedRange: Range) {
-    // TODO: the for loop was never going to work right
+    // TODO:
   }
 
   clone(): TabModel {

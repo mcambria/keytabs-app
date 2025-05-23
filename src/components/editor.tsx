@@ -533,7 +533,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         ))}
       </div>
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
-        {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
         <button
           className={`${showDeleteConfirm ? "p-1 bg-ide-text-destructive text-white" : "text-ide-text-destructive"}`}
