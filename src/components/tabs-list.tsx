@@ -22,21 +22,21 @@ const TabsList: React.FC<TabsListProps> = ({ className = "" }) => {
       {tabList.length === 0 ? (
         <p className="text-sm italic text-gray-300">No tabs saved yet</p>
       ) : (
-        <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar pr-2">
           {tabList.map((tab) => (
             <div
               key={tab.id}
               className={`flex items-center justify-between p-2 cursor-pointer rounded transition-colors ${
                 tab.id === currentTab?.id
-                  ? "bg-ide-bg-hover text-ide-text-accent-primary"
-                  : "bg-ide-bg hover:bg-ide-bg-hover"
+                  ? "bg-ide-bg-hover text-ide-text-accent"
+                  : "bg-ide-panel hover:bg-ide-bg-hover"
               }`}
               onClick={() => setCurrentTab(tab.id)}
             >
               <div className="flex-1 min-w-0">
                 <p
                   className={`font-medium truncate ${
-                    tab.id === currentTab?.id ? "text-ide-text-accent-primary" : "text-ide-text"
+                    tab.id === currentTab?.id ? "text-ide-text-accent" : "text-ide-text"
                   }`}
                   title={tab.song || "Draft"}
                 >

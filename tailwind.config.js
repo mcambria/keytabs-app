@@ -8,23 +8,19 @@ export default {
     extend: {
       colors: {
         ide: {
-          bg: '#1e1e1e',
-          panel: '#1e1e1e',
-          highlight: '#2d2d2d',
+          bg: '#282c34',
+          panel: '#21252b',
+          highlight: '#394e75',
           kbd: '#2b2b2b',
-          'bg-hover': '#2d2d2d',
-          'bg-hover-hover': '#3d3d3d',
+          'bg-hover': '#282c34',
+          'bg-hover-hover': '#394e75',
           text: {
-            DEFAULT: '#a9b7c6',
-            muted: '#606366',
-            accent: {
-              primary: '#b48ead',    // Muted purple for main accents
-              secondary: '#c586c0',  // Slightly brighter purple for hover states
-              highlight: '#d8a0c9',  // Soft pink for highlights
-              subtle: '#9d7fad',     // Very muted purple for secondary text
-            }
+            DEFAULT: '#9ab5c3',
+            muted: '#8e99ae',
+            accent: '#bcb37f',
+            destructive: '#af6a75'
           },
-          cursor: '#9d7fad',
+          cursor: '#dbb62d',
         },
       },
       keyframes: {

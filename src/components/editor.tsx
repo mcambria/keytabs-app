@@ -518,7 +518,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
         {/* <button onClick={() => saveCurrentTab(model.lines)}>Save Tab</button> */}
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
-        <button onClick={() => deleteCurrentTab()}>Delete Tab</button>
+        <button className="text-ide-text-destructive" onClick={() => deleteCurrentTab()}>Delete Tab</button>
       </div>
     </div>
   );
