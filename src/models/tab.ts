@@ -190,7 +190,7 @@ export class TabModel {
     }
   }
 
-  clearContent(selectedRange: Range) {
+  clearContent(_: Range) {
     // TODO:
   }
 
