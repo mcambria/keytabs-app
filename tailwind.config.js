@@ -8,19 +8,19 @@ export default {
     extend: {
       colors: {
         ide: {
-          bg: '#282c34',
-          panel: '#21252b',
-          highlight: '#394e75',
-          kbd: '#2b2b2b',
-          'bg-hover': '#282c34',
-          'bg-hover-hover': '#394e75',
+          bg: '#21252b',
+          panel: '#1c2025',
+          highlight: '#2c3e50',
+          kbd: '#252b33',
+          'bg-hover': '#252b33',
+          'bg-hover-hover': '#2c3e50',
           text: {
-            DEFAULT: '#9ab5c3',
-            muted: '#8e99ae',
-            accent: '#bcb37f',
-            destructive: '#af6a75'
+            DEFAULT: '#cbd5e0',
+            muted: '#94a3b8',
+            accent: '#c4a777',
+            destructive: '#b91c1c'
           },
-          cursor: '#dbb62d',
+          cursor: '#e2b93b',
         },
       },
       keyframes: {
