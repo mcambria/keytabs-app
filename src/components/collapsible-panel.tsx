@@ -54,7 +54,7 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
 
   return (
     <div
-      className={`bg-ide-panel rounded-lg shadow-lg p-6 transition-all duration-200 flex flex-col ${className ?? ""} ${
+      className={`bg-ide-panel rounded-lg shadow-lg p-4 transition-all duration-200 flex flex-col ${className ?? ""} ${
         isCollapsed ? collapsedWidth : defaultWidth
       }`}
     >
