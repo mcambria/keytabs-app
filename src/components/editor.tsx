@@ -412,8 +412,8 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       return;
     }
 
-    // Handle input keys (numbers and special characters)
-    if (/^[0-9]$/.test(e.key) || ["|", "h", "p", "/", "-", "(", ")", "<", ">"].includes(e.key)) {
+    // Handle input keys (numbers, letters, and allowed special characters)
+    if (/^[0-9a-z/\\\-()<>~|]$/i.test(e.key)) {
       e.preventDefault();
       handleInputKey(e);
     }
