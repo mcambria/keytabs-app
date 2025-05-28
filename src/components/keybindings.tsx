@@ -36,8 +36,8 @@ const Keybindings: React.FC<KeyBindingsProps> = ({ className = "" }) => {
             <KeybindingItem label="Move Down" keybinding="↓" />
             <KeybindingItem label="Move Left (8 chords)" keybinding="Ctrl + ←" />
             <KeybindingItem label="Move Right (8 chords)" keybinding="Ctrl + →" />
-            <KeybindingItem label="Move Up (1 line)" keybinding="Ctrl + ↑" />
-            <KeybindingItem label="Move Down (1 line)" keybinding="Ctrl + ↓" />
+            <KeybindingItem label="Move Up (1 staff)" keybinding="Ctrl + ↑" />
+            <KeybindingItem label="Move Down (1 staff)" keybinding="Ctrl + ↓" />
           </ul>
         </div>
         <div className="mb-4">
@@ -46,11 +46,11 @@ const Keybindings: React.FC<KeyBindingsProps> = ({ className = "" }) => {
             <KeybindingItem label="Insert Bar Line" keybinding="|" />
             <KeybindingItem label="Toggle Cell Edit" keybinding="Enter" />
             <KeybindingItem label="Insert Chord" keybinding="Shift + Enter" />
-            <KeybindingItem label="Insert Line" keybinding="Ctrl + Enter" />
+            <KeybindingItem label="Insert Staff" keybinding="Ctrl + Enter" />
             <KeybindingItem label="Delete Backward" keybinding="Backspace" />
             <KeybindingItem label="Delete" keybinding="Delete" />
             <KeybindingItem label="Delete Chord" keybinding="Shift + Backspace" />
-            <KeybindingItem label="Delete Line" keybinding="Ctrl + Backspace" />
+            <KeybindingItem label="Delete Staff" keybinding="Ctrl + Backspace" />
           </ul>
         </div>
         <div className="mb-4">
