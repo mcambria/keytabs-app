@@ -1,6 +1,6 @@
 import { DEFAULT_TUNING } from "@/models/tab";
 import { Tuning } from "@/services/tab-store";
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useState, useEffect } from "react";
 
 interface TuningInputProps {
   value: Tuning;
@@ -11,6 +11,7 @@ interface TuningInputProps {
 export const TuningInput: React.FC<TuningInputProps> = ({ value, onChange, className = "" }) => {
   // reverse the input from how its stored in the array
   const [inputValue, setInputValue] = useState([...value].reverse());
+  useEffect(() => setInputValue([...value].reverse()), [value]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
