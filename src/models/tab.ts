@@ -1,7 +1,7 @@
 import { TabData, Chord, TabLines } from "@/services/tab-store";
 
-export const STRING_NAMES = ["e", "B", "G", "D", "A", "E"];
-export const NUM_STRINGS = STRING_NAMES.length;
+export const DEFAULT_TUNING = ["e", "B", "G", "D", "A", "E"];
+export const NUM_STRINGS = DEFAULT_TUNING.length;
 export const INITIAL_NUM_COLUMNS = 32;
 export const EMPTY_NOTE = "-";
 export const BAR_DELIMITER = "|";

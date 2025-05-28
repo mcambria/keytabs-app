@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Position, Range, EMPTY_NOTE, STRING_NAMES, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
+import { Position, Range, EMPTY_NOTE, DEFAULT_TUNING, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
+import ResizingInput from "./resizing-input";
+import { TuningInput } from "./tuning-input";
 
 type SelectionDirection = "rightDown" | "leftUp";
 type ClipboardData = { isNative: true; lines: TabLines; wholeLines: boolean };
@@ -439,26 +441,37 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   return (
     <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
       <div className="flex flex-none justify-between gap-4 ml-4 mr-4 mb-4">
-        <input
-          type="text"
-          value={currentTabMetadata?.song ?? ""}
-          onChange={(e) => {
-            updateTabMetadata(currentTab.id, { song: e.target.value });
+        <div className="flex justify-start">
+          <ResizingInput
+            type="text"
+            value={currentTabMetadata?.song ?? ""}
+            onChange={(e) => {
+              updateTabMetadata(currentTab.id, { song: e.target.value });
+              setShowDeleteConfirm(false);
+            }}
+            placeholder="Song"
+            minWidth="1rem"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
+          />
+          <span className="mr-4 ml-4 text-ide-text-muted">by</span>
+          <ResizingInput
+            type="text"
+            value={currentTabMetadata?.artist ?? ""}
+            onChange={(e) => {
+              updateTabMetadata(currentTab.id, { artist: e.target.value });
+              setShowDeleteConfirm(false);
+            }}
+            placeholder="Artist"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
+          />
+        </div>
+        <div>
+          <span className="text-ide-text-muted mr-1">Tuning:</span>
+          <TuningInput value={currentTabMetadata?.tuning ?? DEFAULT_TUNING} onChange={(tuning) => {
+            updateTabMetadata(currentTab.id, { tuning: tuning})
             setShowDeleteConfirm(false);
-          }}
-          placeholder="Song"
-          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
-        />
-        <input
-          type="text"
-          value={currentTabMetadata?.artist ?? ""}
-          onChange={(e) => {
-            updateTabMetadata(currentTab.id, { artist: e.target.value });
-            setShowDeleteConfirm(false);
-          }}
-          placeholder="Artist"
-          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
-        />
+          }} className="bg-transparent border-none outline-none text-ide-text"></TuningInput>
+        </div>
       </div>
       <div
         className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none custom-scrollbar"
@@ -473,7 +486,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         {model.lines.map((tabLine, lineIndex) => (
           <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
             <div>
-              {STRING_NAMES.map((stringName, stringIndex) => (
+              {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
                 // -2 relative to start of the actual tab
                 <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
                   {stringName}
@@ -481,7 +494,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
               ))}
             </div>
             <div>
-              {STRING_NAMES.map((_, stringIndex) => (
+              {currentTabMetadata?.tuning.map((_, stringIndex) => (
                 // -1 relative to start of the actual tab
                 <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
               ))}
@@ -524,7 +537,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
               );
             })}
             <div>
-              {STRING_NAMES.map((_, stringIndex) => (
+              {currentTabMetadata?.tuning.map((_, stringIndex) => (
                 // +1 relative to length of the actual tab
                 <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
               ))}
