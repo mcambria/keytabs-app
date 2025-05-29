@@ -441,7 +441,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   return (
     <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
       <div className="flex flex-none justify-between gap-4 ml-2 mr-2 mb-4">
-        <div className="flex justify-start flex-1 overflow-hidden">
+        <div className="flex justify-start overflow-hidden">
           <ResizingInput
             type="text"
             value={currentTabMetadata?.song ?? ""}
@@ -451,9 +451,9 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
             }}
             placeholder="Song"
             minWidth="1rem"
-            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-hidden"
           />
-          <span className="mr-2 ml-2 text-ide-text-muted">by</span>
+          <span className="mr-2 ml-2 text-ide-text-muted flex-none">by</span>
           <ResizingInput
             type="text"
             value={currentTabMetadata?.artist ?? ""}
@@ -462,7 +462,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
               setShowDeleteConfirm(false);
             }}
             placeholder="Artist"
-            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted text-right"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-hidden"
           />
         </div>
         <div className="flex-none">
