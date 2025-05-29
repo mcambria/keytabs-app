@@ -16,7 +16,7 @@ export default function ResizingInput({ className, value, placeholder, minWidth,
   }, [value, placeholder]);
 
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative inline-block ${className}`} title={String(value) || placeholder}>
       <input
         ref={inputRef}
         type="text"
