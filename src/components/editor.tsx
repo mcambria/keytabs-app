@@ -440,7 +440,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   return (
     <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
-      <div className="flex flex-none justify-between gap-4 ml-4 mr-4 mb-4">
+      <div className="flex flex-none justify-between gap-4 ml-2 mr-2 mb-4">
         <div className="flex justify-start">
           <ResizingInput
             type="text"
@@ -453,7 +453,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
             minWidth="1rem"
             className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted"
           />
-          <span className="mr-4 ml-4 text-ide-text-muted">by</span>
+          <span className="mr-2 ml-2 text-ide-text-muted">by</span>
           <ResizingInput
             type="text"
             value={currentTabMetadata?.artist ?? ""}
@@ -470,7 +470,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           <TuningInput value={currentTabMetadata?.tuning ?? DEFAULT_TUNING} onChange={(tuning) => {
             updateTabMetadata(currentTab.id, { tuning: tuning})
             setShowDeleteConfirm(false);
-          }} className="bg-transparent border-none outline-none text-ide-text"></TuningInput>
+          }} className="bg-transparent border-none outline-none text-ide-text mr-2"></TuningInput>
         </div>
       </div>
       <div

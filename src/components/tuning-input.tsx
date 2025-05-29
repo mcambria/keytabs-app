@@ -47,7 +47,7 @@ export const TuningInput: React.FC<TuningInputProps> = ({ value, onChange, class
       type="text"
       value={inputValue}
       onChange={handleChange}
-      className={`w-16 ${className}`}
+      className={`w-[4.25rem] ${className}`}
       placeholder={PLACEHOLDER}
       maxLength={DEFAULT_TUNING.length}
       onBlur={() => updateInputValue(value)}
