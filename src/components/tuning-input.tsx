@@ -8,10 +8,23 @@ interface TuningInputProps {
   className?: string;
 }
 
+const PLACEHOLDER = [...DEFAULT_TUNING].reverse().join("");
+
 export const TuningInput: React.FC<TuningInputProps> = ({ value, onChange, className = "" }) => {
   // reverse the input from how its stored in the array
-  const [inputValue, setInputValue] = useState([...value].reverse());
-  useEffect(() => setInputValue([...value].reverse()), [value]);
+
+  const initialInputValue = [...value].reverse().join("");
+  const [inputValue, setInputValue] = useState(initialInputValue);
+
+  const updateInputValue = (value: string[]) =>
+  {
+    const reversed = [...value].reverse().join("");
+    setInputValue(reversed);
+  }
+
+  useEffect(() => {
+    updateInputValue(value);
+  }, [value]);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     let input = e.target.value;
@@ -23,22 +36,21 @@ export const TuningInput: React.FC<TuningInputProps> = ({ value, onChange, class
       return;
     }
 
-    const splitValue = input.split("");
     if (input.length == 6) {
-      onChange([...splitValue].reverse());
+      onChange(input.split("").reverse());
     }
-    setInputValue(splitValue);
+    setInputValue(input);
   };
 
   return (
     <input
       type="text"
-      value={inputValue.join("")}
+      value={inputValue}
       onChange={handleChange}
       className={`w-16 ${className}`}
-      placeholder={[...DEFAULT_TUNING].reverse().join("")}
+      placeholder={PLACEHOLDER}
       maxLength={DEFAULT_TUNING.length}
-      onBlur={() => setInputValue(value.reverse())}
+      onBlur={() => updateInputValue(value)}
     />
   );
 };
