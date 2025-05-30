@@ -492,70 +492,105 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           className="inline-block select-none font-mono outline-none "
           tabIndex={0}
           onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onFocus={(e) => {
+            // Only handle focus if the event target is the tab content div itself
+            if (e.target === e.currentTarget) {
+              handleFocus();
+            }
+          }}
+          onBlur={(e) => {
+            // Only handle blur if the event target is the tab content div itself
+            if (e.target === e.currentTarget) {
+              handleBlur();
+            }
+          }}
           onMouseDown={handleMouseDown}
           onMouseOver={handleMouseOver}
           onMouseUp={handleMouseUp}
         >
           {model.lines.map((tabLine, lineIndex) => (
-            <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
-              <div>
-                {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
-                  // -2 relative to start of the actual tab
-                  <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
-                    {stringName}
-                  </div>
-                ))}
+            <div key={`${lineIndex}`} className="flex flex-col mb-4">
+              <div className="flex items-center mb-1">
+                <ResizingInput
+                  type="text"
+                  value={model.lineMetadata[lineIndex]?.textAbove ?? ""}
+                  onChange={(e) => {
+                    const newMetadata = [...model.lineMetadata];
+                    newMetadata[lineIndex] = { ...newMetadata[lineIndex], textAbove: e.target.value };
+                    model.lineMetadata = newMetadata;
+                    updateTabLines();
+                  }}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  placeholder="Add text above..."
+                  className="bg-transparent border-none outline-none text-ide-text-muted placeholder-ide-text-muted text-sm"
+                  minWidth="1rem"
+                />
               </div>
-              <div>
-                {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                  // -1 relative to start of the actual tab
-                  <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
-                ))}
-              </div>
-              {tabLine.map((chord, chordIndex) => {
-                const maxChordLength = Math.max(...chord.map((str) => str.length));
-                return (
-                  <div key={`${lineIndex}-${chordIndex}`}>
-                    {chord.map((stringValue, stringIndex) => (
-                      <div
-                        key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                        data-line={lineIndex}
-                        data-chord={chordIndex}
-                        data-string={stringIndex}
-                        data-cell
-                        className={`flex text-center flex-nowrap ${
-                          selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                            ? "bg-ide-cursor"
-                            : ""
-                        }`}
-                      >
-                        <span className="relative">
-                          {stringValue}
-                          {isEditing &&
-                            // can only be in editing mode if the selection is just one long
-                            selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
-                            hasFocus && (
-                              <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
-                            )}
-                        </span>
-                        {
-                          // unless its a bar line, pad the end to match the chord + 1
-                          stringValue === BAR_DELIMITER
-                            ? ""
-                            : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
-                        }
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-              <div>
-                {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                  // +1 relative to length of the actual tab
-                  <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
-                ))}
+              <div className="flex flex-wrap">
+                <div>
+                  {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
+                    // -2 relative to start of the actual tab
+                    <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
+                      {stringName}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                    // -1 relative to start of the actual tab
+                    <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
+                  ))}
+                </div>
+                {tabLine.map((chord, chordIndex) => {
+                  const maxChordLength = Math.max(...chord.map((str) => str.length));
+                  return (
+                    <div key={`${lineIndex}-${chordIndex}`}>
+                      {chord.map((stringValue, stringIndex) => (
+                        <div
+                          key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                          data-line={lineIndex}
+                          data-chord={chordIndex}
+                          data-string={stringIndex}
+                          data-cell
+                          className={`flex text-center flex-nowrap ${
+                            selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
+                            hasFocus &&
+                            !isEditing
+                              ? "bg-ide-cursor"
+                              : ""
+                          }`}
+                        >
+                          <span className="relative">
+                            {stringValue}
+                            {isEditing &&
+                              // can only be in editing mode if the selection is just one long
+                              selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
+                              hasFocus && (
+                                <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
+                              )}
+                          </span>
+                          {
+                            // unless its a bar line, pad the end to match the chord + 1
+                            stringValue === BAR_DELIMITER
+                              ? ""
+                              : "".padEnd(
+                                  maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1,
+                                  EMPTY_NOTE
+                                )
+                          }
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                <div>
+                  {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                    // +1 relative to length of the actual tab
+                    <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
