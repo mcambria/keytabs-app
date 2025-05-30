@@ -8,6 +8,7 @@ export type Tuning = string[];
 export type TabData = {
     id: string;
     lines: TabLines;
+    notes: string;
 }
 
 export type TabMetadata = {
@@ -26,7 +27,7 @@ type TabContentStoreState = {
 
 type TabContentStoreActions = {
     setCurrentTab: (id: string | null) => void;
-    saveCurrentTab: (lines: TabLines) => void;
+    saveCurrentTab: (lines: TabLines, notes: string) => void;
     deleteCurrentTab: () => void;
     updateTabMetadata: (id: string, updates: Partial<TabMetadata>) => void;
 }
@@ -52,9 +53,13 @@ const loadTabContent = (id: string) => {
     let tab: TabData;
     if (rawContent) {
         tab = JSON.parse(rawContent);
+        // Handle migration of old tabs that don't have notes
+        if (tab.notes === undefined) {
+            tab.notes = '';
+        }
     }
     else {
-        tab = { id: id, lines: defaultTabLines() }
+        tab = { id: id, lines: defaultTabLines(), notes: '' }
         saveTabContent(tab);
     }
     return tab;
@@ -95,7 +100,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tab = JSON.parse(rawContent);
         }
         else {
-            tab = { id: id, lines: defaultTabLines() }
+            tab = { id: id, lines: defaultTabLines(), notes: '' }
             saveTabContent(tab);
         }
 
@@ -118,13 +123,13 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         saveCurrentTabId(tab.id);
     },
 
-    saveCurrentTab: (lines) => {
+    saveCurrentTab: (lines, notes) => {
         const id = get().currentTab?.id;
         if (!id) {
             return;
         }
 
-        const tab = { id: id, lines: lines };
+        const tab = { id: id, lines: lines, notes: notes ?? get().currentTab?.notes ?? '' };
         saveTabContent(tab);
         set({ currentTab: tab });
 
@@ -168,7 +173,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         if (currentMetadata?.id === id) {
             currentMetadata = { ...metadata };
         }
-        
+
         set({ tabList: [...tabList], currentTabMetadata: currentMetadata });
         saveTabMetadata(tabList);
     }

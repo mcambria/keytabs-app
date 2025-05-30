@@ -16,14 +16,19 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   // this empty tab model will never be used
   // but React doesn't like it when you short-circuit creating a different amount of hooks each render
-  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
-  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
+  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [], notes: "" }));
+  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [], notes: "" })), [currentTab]);
 
   const updateTabLines = () => {
     // this saving model is very aggressive
     // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
-    saveCurrentTab(model.lines);
+    saveCurrentTab(model.lines, model.notes);
     setModel(model.clone());
+  };
+
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    model.notes = e.target.value;
+    updateTabLines();
   };
 
   // editor state
@@ -440,7 +445,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   return (
     <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
-      <div className="flex flex-none justify-between gap-4 ml-2 mr-2 mb-4">
+      <div className="flex flex-none justify-between gap-4 mb-2">
         <div className="flex justify-start overflow-hidden">
           <ResizingInput
             type="text"
@@ -467,11 +472,23 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         </div>
         <div className="flex-none">
           <span className="text-ide-text-muted mr-1">Tuning:</span>
-          <TuningInput value={currentTabMetadata?.tuning ?? DEFAULT_TUNING} onChange={(tuning) => {
-            updateTabMetadata(currentTab.id, { tuning: tuning})
-            setShowDeleteConfirm(false);
-          }} className="bg-transparent border-none outline-none text-ide-text mr-2"></TuningInput>
+          <TuningInput
+            value={currentTabMetadata?.tuning ?? DEFAULT_TUNING}
+            onChange={(tuning) => {
+              updateTabMetadata(currentTab.id, { tuning: tuning });
+              setShowDeleteConfirm(false);
+            }}
+            className="bg-transparent border-none outline-none text-ide-text"
+          ></TuningInput>
         </div>
+      </div>
+      <div className="flex-none mb-2">
+        <textarea
+          value={model.notes}
+          onChange={handleNotesChange}
+          placeholder="Add notes about this tab..."
+          className="w-full p-2 bg-ide-panel rounded text-ide-text placeholder-ide-text-muted resize-none custom-scrollbar"
+        />
       </div>
       <div
         className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none custom-scrollbar"

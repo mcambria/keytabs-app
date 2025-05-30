@@ -96,10 +96,12 @@ const normalizeChord = (chord: Chord) => {
 export class TabModel {
   id: string;
   lines: TabLines;
+  notes: string;
 
   constructor(data: TabData) {
     this.id = data?.id ?? crypto.randomUUID();
     this.lines = data?.lines ?? [defaultTabLine()];
+    this.notes = data?.notes ?? '';
   }
 
   getStringValue(position: Position): string {
@@ -201,6 +203,6 @@ export class TabModel {
   }
 
   toData(): TabData {
-    return { id: this.id, lines: [...this.lines] };
+    return { id: this.id, lines: [...this.lines], notes: this.notes };
   }
 }
