@@ -1,13 +1,18 @@
-import { DEFAULT_TUNING, defaultTabLines } from '@/models/tab';
+import { DEFAULT_TUNING, defaultTabLines, defaultLineMetadata } from '@/models/tab';
 import { create } from 'zustand';
 
 export type TabLines = string[][][];
 export type Chord = string[];
 export type Tuning = string[];
 
+export type TabLineMetadata = {
+    textAbove?: string;
+}
+
 export type TabData = {
     id: string;
     lines: TabLines;
+    lineMetadata: TabLineMetadata[];
     notes: string;
 }
 
@@ -27,7 +32,7 @@ type TabContentStoreState = {
 
 type TabContentStoreActions = {
     setCurrentTab: (id: string | null) => void;
-    saveCurrentTab: (lines: TabLines, notes: string) => void;
+    saveCurrentTab: (lines: TabLines, lineMetadata: TabLineMetadata[], notes: string) => void;
     deleteCurrentTab: () => void;
     updateTabMetadata: (id: string, updates: Partial<TabMetadata>) => void;
 }
@@ -59,7 +64,7 @@ const loadTabContent = (id: string) => {
         }
     }
     else {
-        tab = { id: id, lines: defaultTabLines(), notes: '' }
+        tab = { id: id, lines: defaultTabLines(), lineMetadata: defaultLineMetadata(), notes: '' }
         saveTabContent(tab);
     }
     return tab;
@@ -100,7 +105,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tab = JSON.parse(rawContent);
         }
         else {
-            tab = { id: id, lines: defaultTabLines(), notes: '' }
+            tab = { id: id, lines: defaultTabLines(), lineMetadata: defaultLineMetadata(), notes: '' }
             saveTabContent(tab);
         }
 
@@ -123,18 +128,19 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         saveCurrentTabId(tab.id);
     },
 
-    saveCurrentTab: (lines, notes) => {
-        const id = get().currentTab?.id;
-        if (!id) {
-            return;
-        }
+    saveCurrentTab: (lines: TabLines, lineMetadata: TabLineMetadata[], notes: string) => {
+        const currentTab = get().currentTab;
+        if (!currentTab) return;
 
-        const tab = { id: id, lines: lines, notes: notes ?? get().currentTab?.notes ?? '' };
-        saveTabContent(tab);
-        set({ currentTab: tab });
+        const updatedTab = {
+            ...currentTab,
+            lines,
+            lineMetadata,
+            notes,
+        };
 
-        // save the metadata changes, they are already in the local state
-        saveTabMetadata(get().tabList);
+        set({ currentTab: updatedTab });
+        saveTabContent(updatedTab);
     },
 
     deleteCurrentTab: () => {

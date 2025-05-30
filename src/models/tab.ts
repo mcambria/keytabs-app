@@ -1,4 +1,4 @@
-import { TabData, Chord, TabLines } from "@/services/tab-store";
+import { TabData, Chord, TabLines, TabLineMetadata } from "@/services/tab-store";
 
 export const DEFAULT_TUNING = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = DEFAULT_TUNING.length;
@@ -87,6 +87,7 @@ export class Range {
 export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => "");
 export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
 export const defaultTabLines = (): TabLines => [defaultTabLine()];
+export const defaultLineMetadata = (): TabLineMetadata[] => [{}];
 
 const normalizeChord = (chord: Chord) => {
   // NOOP placeholder
@@ -96,11 +97,13 @@ const normalizeChord = (chord: Chord) => {
 export class TabModel {
   id: string;
   lines: TabLines;
+  lineMetadata: TabLineMetadata[];
   notes: string;
 
   constructor(data: TabData) {
     this.id = data?.id ?? crypto.randomUUID();
     this.lines = data?.lines ?? [defaultTabLine()];
+    this.lineMetadata = data?.lineMetadata ?? defaultLineMetadata();
     this.notes = data?.notes ?? '';
   }
 
@@ -138,11 +141,12 @@ export class TabModel {
   }
 
   insertEmptyLine(position: Position): void {
-    this.insertLines(position, [defaultTabLine()]);
+    this.insertLines(position, [defaultTabLine()], [{}]);
   }
 
-  insertLines(position: Position, lines: TabLines): void {
+  insertLines(position: Position, lines: TabLines, metadata: TabLineMetadata[] = lines.map(() => ({}))): void {
     this.lines.splice(position.line + 1, 0, ...lines);
+    this.lineMetadata.splice(position.line + 1, 0, ...metadata);
   }
 
   deleteLine(position: Position): void {
@@ -150,6 +154,7 @@ export class TabModel {
       return;
     }
     this.lines.splice(position.line, 1);
+    this.lineMetadata.splice(position.line, 1);
   }
 
   insertChord(position: Position, value: Chord = defaultChord()): void {
@@ -203,6 +208,11 @@ export class TabModel {
   }
 
   toData(): TabData {
-    return { id: this.id, lines: [...this.lines], notes: this.notes };
+    return {
+      id: this.id,
+      lines: [...this.lines],
+      lineMetadata: [...this.lineMetadata],
+      notes: this.notes
+    };
   }
 }
