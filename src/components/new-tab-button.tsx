@@ -1,5 +1,5 @@
 import { useTabStore } from "@/services/tab-store";
-import { ClassNameProp } from "./ClassNameProp";
+import { ClassNameProp } from "./class-name-prop";
 
 type NewTabButtonProps = ClassNameProp;
 

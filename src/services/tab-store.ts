@@ -1,8 +1,9 @@
-import { defaultTabLines } from '@/models/tab';
+import { DEFAULT_TUNING, defaultTabLines } from '@/models/tab';
 import { create } from 'zustand';
 
 export type TabLines = string[][][];
 export type Chord = string[];
+export type Tuning = string[];
 
 export type TabData = {
     id: string;
@@ -13,6 +14,7 @@ export type TabMetadata = {
     id: string;
     song: string;
     artist: string,
+    tuning: Tuning,
     lastModified: number
 };
 
@@ -59,7 +61,10 @@ const loadTabContent = (id: string) => {
 }
 
 // do an initial load outside of the definitions to avoid repeats
-const initialTabList = JSON.parse(localStorage.getItem(TAB_METADATA_STORAGE_KEY) ?? '[]') as TabMetadata[];
+const initialTabList = (JSON.parse(localStorage.getItem(TAB_METADATA_STORAGE_KEY) ?? '[]') as TabMetadata[]).map(m => {
+    m.tuning = m.tuning ?? DEFAULT_TUNING
+    return m;
+});
 const initialCurrentTabId = localStorage.getItem(CURRENT_TAB_ID_STORAGE_KEY);
 
 type TabContentState = TabContentStoreState & TabContentStoreActions;
@@ -104,7 +109,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tabMetadata = storedMetadata
         }
         else {
-            tabMetadata = { id: id, song: '', artist: '', lastModified: Date.now() };
+            tabMetadata = { id: id, song: '', artist: '', tuning: DEFAULT_TUNING, lastModified: Date.now() };
             tabList.unshift(tabMetadata);
             saveTabMetadata(tabList);
         }
@@ -156,7 +161,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
 
         let metadata = tabList[index];
         let currentMetadata = get().currentTabMetadata;
-        metadata = { ...metadata, ...updates };
+        metadata = { ...metadata, ...updates, lastModified: Date.now() };
         // update in the list
         tabList[index] = metadata;
         // update the current if that's what we're editing
