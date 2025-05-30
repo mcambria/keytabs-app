@@ -451,7 +451,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
             }}
             placeholder="Song"
             minWidth="1rem"
-            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-hidden"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
           />
           <span className="mr-2 ml-2 text-ide-text-muted flex-none">by</span>
           <ResizingInput
@@ -462,7 +462,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
               setShowDeleteConfirm(false);
             }}
             placeholder="Artist"
-            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-hidden"
+            className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
           />
         </div>
         <div className="flex-none">

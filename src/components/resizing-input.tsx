@@ -25,7 +25,7 @@ export default function ResizingInput({ className, value, placeholder, minWidth,
         placeholder={placeholder}
         {...props}
       />
-      <span ref={testSpanRef} className="absolute invisible whitespace-pre">
+      <span ref={testSpanRef} className="absolute invisible whitespace-pre left-0">
         {value || placeholder || "&nbsp"}
       </span>
     </div>
