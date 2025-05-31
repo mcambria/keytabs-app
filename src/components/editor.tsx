@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, DEFAULT_TUNING, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
 import ResizingInput from "./resizing-input";
+import ResizingTextarea from "./resizing-textarea";
 import { TuningInput } from "./tuning-input";
 
 type SelectionDirection = "rightDown" | "leftUp";
@@ -340,16 +341,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         commitEdit();
         setSelection(new Range(selection.start));
         break;
-      case "c":
-        if (e.ctrlKey) {
-          handleCopySelection(e);
-        }
-        break;
-      case "v":
-        if (e.ctrlKey) {
-          handlePasteSelection(e);
-        }
-        break;
     }
   };
 
@@ -409,13 +400,19 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Handle navigation keys
-    if (
-      ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape", "c", "v"].includes(
-        e.key
-      )
-    ) {
+    // Handle navigation and special keys
+    if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape"].includes(e.key)) {
       handleNavigationKey(e);
+      return;
+    }
+
+    // Handle copy/paste
+    if (e.ctrlKey && (e.key === "c" || e.key === "v")) {
+      if (e.key === "c") {
+        handleCopySelection(e);
+      } else {
+        handlePasteSelection(e);
+      }
       return;
     }
 
@@ -482,85 +479,80 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           ></TuningInput>
         </div>
       </div>
-      <div className="flex-none mb-2">
-        <textarea
-          value={model.notes}
-          onChange={handleNotesChange}
-          placeholder="Add notes about this tab..."
-          className="w-full p-2 bg-ide-panel rounded text-ide-text placeholder-ide-text-muted resize-none custom-scrollbar"
-        />
-      </div>
-      <div
-        className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none custom-scrollbar"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onMouseDown={handleMouseDown}
-        onMouseOver={handleMouseOver}
-        onMouseUp={handleMouseUp}
-      >
-        {model.lines.map((tabLine, lineIndex) => (
-          <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
-            <div>
-              {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
-                // -2 relative to start of the actual tab
-                <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
-                  {stringName}
-                </div>
-              ))}
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-4 text-ide-text custom-scrollbar">
+        <ResizingTextarea value={model.notes} onChange={handleNotesChange} placeholder="Notes..." className="" />
+        <div
+          className="inline-block select-none font-mono outline-none "
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onMouseDown={handleMouseDown}
+          onMouseOver={handleMouseOver}
+          onMouseUp={handleMouseUp}
+        >
+          {model.lines.map((tabLine, lineIndex) => (
+            <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+              <div>
+                {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
+                  // -2 relative to start of the actual tab
+                  <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
+                    {stringName}
+                  </div>
+                ))}
+              </div>
+              <div>
+                {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                  // -1 relative to start of the actual tab
+                  <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
+                ))}
+              </div>
+              {tabLine.map((chord, chordIndex) => {
+                const maxChordLength = Math.max(...chord.map((str) => str.length));
+                return (
+                  <div key={`${lineIndex}-${chordIndex}`}>
+                    {chord.map((stringValue, stringIndex) => (
+                      <div
+                        key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                        data-line={lineIndex}
+                        data-chord={chordIndex}
+                        data-string={stringIndex}
+                        data-cell
+                        className={`flex text-center flex-nowrap ${
+                          selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
+                            ? "bg-ide-cursor"
+                            : ""
+                        }`}
+                      >
+                        <span className="relative">
+                          {stringValue}
+                          {isEditing &&
+                            // can only be in editing mode if the selection is just one long
+                            selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
+                            hasFocus && (
+                              <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
+                            )}
+                        </span>
+                        {
+                          // unless its a bar line, pad the end to match the chord + 1
+                          stringValue === BAR_DELIMITER
+                            ? ""
+                            : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
+                        }
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+              <div>
+                {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                  // +1 relative to length of the actual tab
+                  <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
+                ))}
+              </div>
             </div>
-            <div>
-              {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                // -1 relative to start of the actual tab
-                <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
-              ))}
-            </div>
-            {tabLine.map((chord, chordIndex) => {
-              const maxChordLength = Math.max(...chord.map((str) => str.length));
-              return (
-                <div key={`${lineIndex}-${chordIndex}`}>
-                  {chord.map((stringValue, stringIndex) => (
-                    <div
-                      key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                      data-line={lineIndex}
-                      data-chord={chordIndex}
-                      data-string={stringIndex}
-                      data-cell
-                      className={`flex text-center flex-nowrap ${
-                        selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                          ? "bg-ide-cursor"
-                          : ""
-                      }`}
-                    >
-                      <span className="relative">
-                        {stringValue}
-                        {isEditing &&
-                          // can only be in editing mode if the selection is just one long
-                          selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
-                          hasFocus && (
-                            <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
-                          )}
-                      </span>
-                      {
-                        // unless its a bar line, pad the end to match the chord + 1
-                        stringValue === BAR_DELIMITER
-                          ? ""
-                          : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
-                      }
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-            <div>
-              {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                // +1 relative to length of the actual tab
-                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
-              ))}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>
