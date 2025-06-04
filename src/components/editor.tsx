@@ -408,11 +408,21 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
     // Handle copy/paste
     if (e.ctrlKey && (e.key === "c" || e.key === "v")) {
+      e.preventDefault();
       if (e.key === "c") {
         handleCopySelection(e);
       } else {
         handlePasteSelection(e);
       }
+      return;
+    }
+
+    // Handle insert text line
+    if (e.ctrlKey && e.key === "i") {
+      e.preventDefault();
+      const insertPosition = model.insertTextLine(selection.start);
+      setSelection(new Range(insertPosition));
+      updateTabLines();
       return;
     }
 
@@ -491,67 +501,108 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           onMouseOver={handleMouseOver}
           onMouseUp={handleMouseUp}
         >
-          {model.lines.map((tabLine, lineIndex) => (
-            <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
-              <div>
-                {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
-                  // -2 relative to start of the actual tab
-                  <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
-                    {stringName}
-                  </div>
-                ))}
-              </div>
-              <div>
-                {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                  // -1 relative to start of the actual tab
-                  <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
-                ))}
-              </div>
-              {tabLine.map((chord, chordIndex) => {
-                const maxChordLength = Math.max(...chord.map((str) => str.length));
-                return (
-                  <div key={`${lineIndex}-${chordIndex}`}>
-                    {chord.map((stringValue, stringIndex) => (
-                      <div
-                        key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                        data-line={lineIndex}
-                        data-chord={chordIndex}
-                        data-string={stringIndex}
-                        data-cell
-                        className={`flex text-center flex-nowrap ${
-                          selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                            ? "bg-ide-cursor"
-                            : ""
-                        }`}
-                      >
-                        <span className="relative">
-                          {stringValue}
-                          {isEditing &&
-                            // can only be in editing mode if the selection is just one long
-                            selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
-                            hasFocus && (
-                              <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
-                            )}
-                        </span>
-                        {
-                          // unless its a bar line, pad the end to match the chord + 1
-                          stringValue === BAR_DELIMITER
-                            ? ""
-                            : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
-                        }
+          {model.lines.map((tabLine, lineIndex) => {
+            const isStaffLine = tabLine[0].length == NUM_STRINGS;
+            if (isStaffLine) {
+              return (
+                <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+                  <div>
+                    {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
+                      // -2 relative to start of the actual tab
+                      <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
+                        {stringName}
                       </div>
                     ))}
                   </div>
-                );
-              })}
-              <div>
-                {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                  // +1 relative to length of the actual tab
-                  <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
-                ))}
-              </div>
-            </div>
-          ))}
+                  <div>
+                    {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                      // -1 relative to start of the actual tab
+                      <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
+                    ))}
+                  </div>
+                  {tabLine.map((chord, chordIndex) => {
+                    const maxChordLength = Math.max(...chord.map((str) => str.length));
+                    return (
+                      <div key={`${lineIndex}-${chordIndex}`}>
+                        {chord.map((stringValue, stringIndex) => (
+                          <div
+                            key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                            data-line={lineIndex}
+                            data-chord={chordIndex}
+                            data-string={stringIndex}
+                            data-cell
+                            className={`flex text-center flex-nowrap ${
+                              selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
+                              hasFocus &&
+                              !isEditing
+                                ? "bg-ide-cursor"
+                                : ""
+                            }`}
+                          >
+                            <span className="relative">
+                              {stringValue}
+                              {isEditing &&
+                                // can only be in editing mode if the selection is just one long
+                                selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
+                                hasFocus && (
+                                  <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
+                                )}
+                            </span>
+                            {
+                              // unless its a bar line, pad the end to match the chord + 1
+                              stringValue === BAR_DELIMITER
+                                ? ""
+                                : "".padEnd(
+                                    maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1,
+                                    EMPTY_NOTE
+                                  )
+                            }
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  <div>
+                    {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                      // +1 relative to length of the actual tab
+                      <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
+                    ))}
+                  </div>
+                </div>
+              );
+            } else {
+              return (
+                <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+                  {
+                    // there should only be one line here, but we might expand it in the future
+                    tabLine.map((chord, chordIndex) => (
+                    <div key={`${lineIndex}-${chordIndex}`}>
+                      {chord.map((stringValue, stringIndex) => (
+                        <span
+                          key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                          data-line={lineIndex}
+                          data-chord={chordIndex}
+                          data-string={stringIndex}
+                          data-cell
+                          className={`flex text-center flex-nowrap relative ${
+                            selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
+                            hasFocus
+                              ? "bg-ide-cursor"
+                              : ""
+                            }`}
+                        >
+                          {
+                            // use &nbsp to make selection state apparent
+                            stringValue === "" ? "\u00A0" : stringValue
+                          }
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              );
+            }
+          })}
         </div>
       </div>
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">

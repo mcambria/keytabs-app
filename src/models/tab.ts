@@ -86,6 +86,7 @@ export class Range {
 
 export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => "");
 export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
+export const defaultTextLine = () => Array.from({ length: 1 }, () => Array.from({ length: 1 }, () => ""));
 export const defaultTabLines = (): TabLines => [defaultTabLine()];
 
 const normalizeChord = (chord: Chord) => {
@@ -139,6 +140,13 @@ export class TabModel {
 
   insertEmptyLine(position: Position): void {
     this.insertLines(position, [defaultTabLine()]);
+  }
+
+  insertTextLine(position: Position): Position {
+    // insert above
+    const insertPosition = new Position(position.line - 1, position.chord, position.string);
+    this.insertLines(insertPosition, [defaultTextLine()]);
+    return insertPosition;
   }
 
   insertLines(position: Position, lines: TabLines): void {
