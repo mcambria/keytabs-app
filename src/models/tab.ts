@@ -92,12 +92,10 @@ export const defaultTabLines = (): TabLines => [defaultTabLine()];
 export class TabModel {
   id: string;
   lines: TabLines;
-  notes: string;
 
   constructor(data: TabData) {
     this.id = data?.id ?? crypto.randomUUID();
     this.lines = data?.lines ?? [defaultTabLine()];
-    this.notes = data?.notes ?? '';
   }
 
   isStaffLine(line: number): boolean {
@@ -230,6 +228,6 @@ export class TabModel {
   }
 
   toData(): TabData {
-    return { id: this.id, lines: [...this.lines], notes: this.notes };
+    return { id: this.id, lines: [...this.lines] };
   }
 }

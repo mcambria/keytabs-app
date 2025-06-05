@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Position, Range, EMPTY_NOTE, DEFAULT_TUNING, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
 import ResizingInput from "./resizing-input";
-import ResizingTextarea from "./resizing-textarea";
 import { TuningInput } from "./tuning-input";
 
 type SelectionDirection = "rightDown" | "leftUp";
@@ -17,19 +16,14 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   // this empty tab model will never be used
   // but React doesn't like it when you short-circuit creating a different amount of hooks each render
-  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [], notes: "" }));
-  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [], notes: "" })), [currentTab]);
+  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: []}));
+  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
 
   const updateTabLines = () => {
     // this saving model is very aggressive
     // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
-    saveCurrentTab(model.lines, model.notes);
+    saveCurrentTab(model.lines);
     setModel(model.clone());
-  };
-
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    model.notes = e.target.value;
-    updateTabLines();
   };
 
   // editor state
@@ -532,7 +526,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         </div>
       </div>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-4 text-ide-text custom-scrollbar">
-        <ResizingTextarea value={model.notes} onChange={handleNotesChange} placeholder="Notes..." className="" />
         <div
           className="inline-block select-none font-mono outline-none "
           tabIndex={0}

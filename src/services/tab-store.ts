@@ -8,7 +8,6 @@ export type Tuning = string[];
 export type TabData = {
     id: string;
     lines: TabLines;
-    notes: string;
 }
 
 export type TabMetadata = {
@@ -27,7 +26,7 @@ type TabContentStoreState = {
 
 type TabContentStoreActions = {
     setCurrentTab: (id: string | null) => void;
-    saveCurrentTab: (lines: TabLines, notes: string) => void;
+    saveCurrentTab: (lines: TabLines) => void;
     deleteCurrentTab: () => void;
     updateTabMetadata: (id: string, updates: Partial<TabMetadata>) => void;
 }
@@ -53,13 +52,9 @@ const loadTabContent = (id: string) => {
     let tab: TabData;
     if (rawContent) {
         tab = JSON.parse(rawContent);
-        // Handle migration of old tabs that don't have notes
-        if (tab.notes === undefined) {
-            tab.notes = '';
-        }
     }
     else {
-        tab = { id: id, lines: defaultTabLines(), notes: '' }
+        tab = { id: id, lines: defaultTabLines() }
         saveTabContent(tab);
     }
     return tab;
@@ -100,7 +95,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             tab = JSON.parse(rawContent);
         }
         else {
-            tab = { id: id, lines: defaultTabLines(), notes: '' }
+            tab = { id: id, lines: defaultTabLines() }
             saveTabContent(tab);
         }
 
@@ -123,13 +118,13 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         saveCurrentTabId(tab.id);
     },
 
-    saveCurrentTab: (lines, notes) => {
+    saveCurrentTab: (lines) => {
         const id = get().currentTab?.id;
         if (!id) {
             return;
         }
 
-        const tab = { id: id, lines: lines, notes: notes ?? get().currentTab?.notes ?? '' };
+        const tab = { id: id, lines: lines };
         saveTabContent(tab);
         set({ currentTab: tab });
 
