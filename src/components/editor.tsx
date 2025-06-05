@@ -67,11 +67,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     const textLineParent = target.closest("[data-text-line]");
     if (textLineParent) {
       const lineIndex = parseInt(textLineParent.getAttribute("data-text-line") || "0");
-      return new Position(
-        lineIndex,
-        model.lines[lineIndex].length - 1,
-        0
-      )
+      return new Position(lineIndex, model.lines[lineIndex].length - 1, 0);
     }
 
     return null;
@@ -203,7 +199,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   const updateSelectionWithMove = (dline: number, dchord: number, dstring: number) => {
     // if we are starting from regular cursor, special handling to just select the chord
-    if (selection.isSinglePosition()) {
+    if (selection.isSinglePosition() && model.isStaffLine(selection.start.line)) {
       setSelection(
         new Range(
           new Position(selection.start.line, selection.start.chord, 0),
@@ -271,25 +267,33 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   const handleInputKey = (e: React.KeyboardEvent) => {
     // if they start inputting, revert to inputting into start position
     setSelection(new Range(selection.start));
-
     const key = e.key;
-    if (key == "|") {
-      model.insertBarLine(selection.start);
-      moveCursor(0, 2, 0);
-      updateTabLines();
-      return;
-    }
 
-    let currentValue = "";
-    if (isEditing) {
-      currentValue = model.getStringValue(selection.start);
-    }
+    if (model.isStaffLine(selection.start.line)) {
+      if (key === " ") {
+        return;
+      }
+      if (key === "|") {
+        model.insertBarLine(selection.start);
+        moveCursor(0, 2, 0);
+        updateTabLines();
+        return;
+      }
 
-    const newValue = currentValue + key;
-    model.setStringValue(selection.start, newValue);
+      let currentValue = "";
+      if (isEditing) {
+        currentValue = model.getStringValue(selection.start);
+      }
+
+      const newValue = currentValue + key;
+      model.setStringValue(selection.start, newValue);
+
+      startEditing();
+    } else {
+      model.insertTextValue(selection.start, key);
+      moveCursor(0, 1, 0);
+    }
     updateTabLines();
-
-    startEditing();
   };
 
   const handleNavigationKey = (e: React.KeyboardEvent) => {
@@ -327,22 +331,28 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           model.insertChord(selection.start);
           updateTabLines();
         } else {
-          if (isEditing) {
-            moveCursor(0, 0, 0);
-            commitEdit();
-          } else {
-            startEditing();
+          if (model.isStaffLine(selection.start.line)) {
+            if (isEditing) {
+              moveCursor(0, 0, 0);
+              commitEdit();
+            } else {
+              startEditing();
+            }
+          }
+          else {
+            model.insertTextLineBelow(selection.start);
+            updateTabLines();
           }
         }
         break;
       case "Backspace":
-        removeContent(currentValue, e.shiftKey, e.ctrlKey);
+        removeContent(currentValue, true, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
           moveCursor(0, -1, 0);
         }
         break;
       case "Delete":
-        removeContent(currentValue, e.shiftKey, e.ctrlKey);
+        removeContent(currentValue, false, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
           moveCursor(0, 0, 0);
         }
@@ -354,18 +364,35 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     }
   };
 
-  const removeContent = (currentValue: string, shift: boolean, control: boolean) => {
+  const removeContent = (currentValue: string, backspace: boolean, shift: boolean, control: boolean) => {
     if (isEditing) {
       const newValue = currentValue.slice(0, -1);
       model.setStringValue(selection.start, newValue);
     } else {
       if (selection.isSinglePosition()) {
-        if (currentValue == BAR_DELIMITER || shift) {
-          model.deleteChord(selection.start);
-        } else if (control) {
-          model.deleteLine(selection.start);
+        if (model.isStaffLine(selection.start.line)) {
+          if (currentValue == BAR_DELIMITER || shift) {
+            model.deleteChord(selection.start);
+          } else if (control) {
+            model.deleteLine(selection.start);
+          } else if (backspace) {
+            model.setStringValue(
+              new Position(selection.start.line, selection.start.chord - 1, selection.start.string),
+              ""
+            );
+          } else {
+            model.setStringValue(selection.start, "");
+          }
         } else {
-          model.setStringValue(selection.start, "");
+          if (model.lines[selection.start.line].length === 1) {
+            model.deleteTextLine(selection.start);
+          } else if (backspace) {
+            model.deleteTextValue(
+              new Position(selection.start.line, Math.max(0, selection.start.chord - 1), selection.start.string)
+            );
+          } else {
+            model.deleteTextValue(selection.start);
+          }
         }
       } else {
         // currently doesn't do anything
@@ -428,16 +455,21 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     }
 
     // Handle insert text line
-    if (e.ctrlKey && e.key === "i") {
+    if (e.ctrlKey && (e.key === "i" || e.key === "I")) {
       e.preventDefault();
-      const newPosition = model.insertTextLine(selection.start);
+      let newPosition: Position;
+      if (e.shiftKey) {
+        newPosition = model.insertTextLineBelow(selection.start);
+      } else {
+        newPosition = model.insertTextLineAbove(selection.start);
+      }
       setSelection(new Range(newPosition));
       updateTabLines();
       return;
     }
 
     // Handle input keys (numbers, letters, and allowed special characters)
-    if (/^[0-9a-z/\\\-()<>~\^\[\]|]$/i.test(e.key)) {
+    if (/^[0-9a-z/\\\-()<>~\^\[\]| ]$/i.test(e.key)) {
       e.preventDefault();
       handleInputKey(e);
     }
@@ -512,8 +544,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           onMouseUp={handleMouseUp}
         >
           {model.lines.map((tabLine, lineIndex) => {
-            const isStaffLine = tabLine[0].length == NUM_STRINGS;
-            if (isStaffLine) {
+            if (model.isStaffLine(lineIndex)) {
               return (
                 <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
                   <div>
@@ -604,7 +635,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
                             {
                               // use &nbsp to make selection state apparent
                               // TODO: need to make this work with actual data
-                              stringValue === "" ? "\u00A0" : stringValue
+                              stringValue === "" || stringValue === " " ? "\u00A0" : stringValue
                             }
                           </span>
                         ))}

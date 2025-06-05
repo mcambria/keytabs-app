@@ -89,11 +89,6 @@ export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, 
 export const defaultTextLine = () => Array.from({ length: 1 }, () => Array.from({ length: 1 }, () => ""));
 export const defaultTabLines = (): TabLines => [defaultTabLine()];
 
-const normalizeChord = (chord: Chord) => {
-  // NOOP placeholder
-  return chord
-};
-
 export class TabModel {
   id: string;
   lines: TabLines;
@@ -105,6 +100,10 @@ export class TabModel {
     this.notes = data?.notes ?? '';
   }
 
+  isStaffLine(line: number): boolean {
+    return this.lines[line][0].length === NUM_STRINGS;
+  }
+
   getStringValue(position: Position): string {
     return this.lines[position.line]?.[position.chord]?.[position.string] ?? "";
   }
@@ -114,14 +113,27 @@ export class TabModel {
   }
 
   setStringValue(position: Position, value: string): void {
-    let chord = this.lines[position.line][position.chord];
-    chord[position.string] = value;
+    this.lines[position.line][position.chord][position.string] = value;
+  }
 
-    this.setChordValue(position, chord);
+  insertTextValue(position: Position, value: string) {
+    this.insertTextValues(position, [value]);
+  }
+
+  insertTextValues(position: Position, values: string[]) {
+    const asChords = values.map(v => [v])
+    this.lines[position.line].splice(position.chord, 0, ...asChords);
+  }
+
+  deleteTextValue(position: Position) {
+    this.lines[position.line].splice(position.chord, 1);
+  }
+
+  deleteTextLine(position: Position) {
+    this.lines.splice(position.line, 1);
   }
 
   setChordValue(position: Position, value: Chord): void {
-    value = normalizeChord(value);
     this.lines[position.line][position.chord] = value;
   }
 
@@ -142,12 +154,17 @@ export class TabModel {
     this.insertLinesBelow(position, [defaultTabLine()]);
   }
 
-  insertTextLine(position: Position) : Position {
+  insertTextLineAbove(position: Position) : Position {
     // insert above
     this.insertLinesAbove(position, [defaultTextLine()]);
     return new Position(position.line, 0, 0);
   }
 
+  insertTextLineBelow(position: Position) : Position {
+    // insert above
+    this.insertLinesBelow(position, [defaultTextLine()]);
+    return new Position(position.line + 1, 0, 0);
+  }
   insertLinesAbove(position: Position, lines: TabLines): void {
     this.lines.splice(position.line, 0, ...lines);
   }
@@ -168,8 +185,7 @@ export class TabModel {
   }
 
   insertChords(position: Position, values: Chord[]): void {
-    const normalized = values.map(v => normalizeChord(v));
-    this.lines[position.line].splice(position.chord + 1, 0, ...normalized);
+    this.lines[position.line].splice(position.chord + 1, 0, ...values);
   }
 
   getContent(range: Range): TabLines {
