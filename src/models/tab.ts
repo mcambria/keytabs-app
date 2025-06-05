@@ -139,17 +139,20 @@ export class TabModel {
   }
 
   insertEmptyLine(position: Position): void {
-    this.insertLines(position, [defaultTabLine()]);
+    this.insertLinesBelow(position, [defaultTabLine()]);
   }
 
-  insertTextLine(position: Position): Position {
+  insertTextLine(position: Position) : Position {
     // insert above
-    const insertPosition = new Position(position.line - 1, position.chord, position.string);
-    this.insertLines(insertPosition, [defaultTextLine()]);
-    return insertPosition;
+    this.insertLinesAbove(position, [defaultTextLine()]);
+    return new Position(position.line, 0, 0);
   }
 
-  insertLines(position: Position, lines: TabLines): void {
+  insertLinesAbove(position: Position, lines: TabLines): void {
+    this.lines.splice(position.line, 0, ...lines);
+  }
+
+  insertLinesBelow(position: Position, lines: TabLines): void {
     this.lines.splice(position.line + 1, 0, ...lines);
   }
 
@@ -196,7 +199,7 @@ export class TabModel {
       this.insertChords(selectedRange.start, lines[0]);
     }
     else {
-      this.insertLines(selectedRange.start, lines);
+      this.insertLinesBelow(selectedRange.start, lines);
     }
   }
 

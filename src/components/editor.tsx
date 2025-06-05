@@ -56,15 +56,25 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const positionFromTarget = (target: HTMLElement): Position | null => {
-    const cell = target.closest("[data-cell]");
-    if (!cell) {
-      return null;
+    const tabCell = target.closest("[data-cell]");
+    if (tabCell) {
+      const lineIndex = parseInt(tabCell.getAttribute("data-line") || "0");
+      const chordIndex = parseInt(tabCell.getAttribute("data-chord") || "0");
+      const stringIndex = parseInt(tabCell.getAttribute("data-string") || "0");
+      return new Position(lineIndex, chordIndex, stringIndex);
     }
 
-    const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
-    const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
-    const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
-    return new Position(lineIndex, chordIndex, stringIndex);
+    const textLineParent = target.closest("[data-text-line]");
+    if (textLineParent) {
+      const lineIndex = parseInt(textLineParent.getAttribute("data-text-line") || "0");
+      return new Position(
+        lineIndex,
+        model.lines[lineIndex].length - 1,
+        0
+      )
+    }
+
+    return null;
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -160,17 +170,17 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         // Moving up past the first string
         if (newLine > 0) {
           newLine--;
-          newString = NUM_STRINGS - 1;
+          newString = model.lines[newLine][0].length - 1;
         } else {
           newString = 0;
         }
-      } else if (newString >= NUM_STRINGS) {
+      } else if (newString >= model.lines[from.line][0].length) {
         // Moving down past the last string
         if (newLine < model.lines.length - 1) {
           newLine++;
           newString = 0;
         } else {
-          newString = NUM_STRINGS - 1;
+          newString = model.lines[newLine][0].length;
         }
       }
     }
@@ -182,7 +192,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         newString = 0;
       } else if (newLine > model.lines.length - 1) {
         newLine = model.lines.length - 1;
-        newString = NUM_STRINGS - 1;
+        newString = model.lines[newLine][0].length - 1;
       }
     }
     // don't wrap, just prevent it from moving past the edge
@@ -420,14 +430,14 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     // Handle insert text line
     if (e.ctrlKey && e.key === "i") {
       e.preventDefault();
-      const insertPosition = model.insertTextLine(selection.start);
-      setSelection(new Range(insertPosition));
+      const newPosition = model.insertTextLine(selection.start);
+      setSelection(new Range(newPosition));
       updateTabLines();
       return;
     }
 
     // Handle input keys (numbers, letters, and allowed special characters)
-    if (/^[0-9a-z/\\\-()<>~|]$/i.test(e.key)) {
+    if (/^[0-9a-z/\\\-()<>~\^\[\]|]$/i.test(e.key)) {
       e.preventDefault();
       handleInputKey(e);
     }
@@ -571,34 +581,36 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
                 </div>
               );
             } else {
+              console.log(selection.start);
               return (
-                <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+                <div key={`${lineIndex}`} className="flex flex-wrap" data-text-line={lineIndex}>
                   {
                     // there should only be one line here, but we might expand it in the future
                     tabLine.map((chord, chordIndex) => (
-                    <div key={`${lineIndex}-${chordIndex}`}>
-                      {chord.map((stringValue, stringIndex) => (
-                        <span
-                          key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                          data-line={lineIndex}
-                          data-chord={chordIndex}
-                          data-string={stringIndex}
-                          data-cell
-                          className={`flex text-center flex-nowrap relative ${
-                            selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
-                            hasFocus
-                              ? "bg-ide-cursor"
-                              : ""
+                      <div key={`${lineIndex}-${chordIndex}`}>
+                        {chord.map((stringValue, stringIndex) => (
+                          <span
+                            key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                            data-line={lineIndex}
+                            data-chord={chordIndex}
+                            data-string={stringIndex}
+                            data-cell
+                            className={`flex text-center flex-nowrap relative ${
+                              selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus
+                                ? "bg-ide-cursor"
+                                : ""
                             }`}
-                        >
-                          {
-                            // use &nbsp to make selection state apparent
-                            stringValue === "" ? "\u00A0" : stringValue
-                          }
-                        </span>
-                      ))}
-                    </div>
-                  ))}
+                          >
+                            {
+                              // use &nbsp to make selection state apparent
+                              // TODO: need to make this work with actual data
+                              stringValue === "" ? "\u00A0" : stringValue
+                            }
+                          </span>
+                        ))}
+                      </div>
+                    ))
+                  }
                 </div>
               );
             }
