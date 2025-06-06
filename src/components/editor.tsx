@@ -403,7 +403,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
             model.setStringValue(selection.start, "");
           }
         } else {
-          if (model.lines[selection.start.line].length === 1) {
+          if (control || model.lines[selection.start.line].length === 1) {
             model.deleteTextLine(selection.start);
           } else if (backspace) {
             model.deleteTextValue(
