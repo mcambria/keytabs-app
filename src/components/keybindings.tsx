@@ -47,6 +47,8 @@ const Keybindings: React.FC<KeyBindingsProps> = ({ className = "" }) => {
             <KeybindingItem label="Toggle Cell Edit" keybinding="Enter" />
             <KeybindingItem label="Insert Chord" keybinding="Shift + Enter" />
             <KeybindingItem label="Insert Staff" keybinding="Ctrl + Enter" />
+            <KeybindingItem label="Insert Text Line Above" keybinding="Ctrl + I" />
+            <KeybindingItem label="Insert Text Line Below" keybinding="Ctrl + Shift + I" />
             <KeybindingItem label="Delete Backward" keybinding="Backspace" />
             <KeybindingItem label="Delete" keybinding="Delete" />
             <KeybindingItem label="Delete Chord" keybinding="Shift + Backspace" />

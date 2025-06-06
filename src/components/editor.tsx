@@ -14,14 +14,11 @@ type TabEditorProps = {
 const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
-  // this empty tab model will never be used
-  // but React doesn't like it when you short-circuit creating a different amount of hooks each render
   const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
   useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
 
   const updateTabLines = () => {
-    // this saving model is very aggressive
-    // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
+    // this saving model is very aggressive - it might be better to auto-save on a timer or on switching
     saveCurrentTab(model.lines);
     setModel(model.clone());
   };
@@ -50,15 +47,21 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const positionFromTarget = (target: HTMLElement): Position | null => {
-    const cell = target.closest("[data-cell]");
-    if (!cell) {
-      return null;
+    const tabCell = target.closest("[data-cell]");
+    if (tabCell) {
+      const lineIndex = parseInt(tabCell.getAttribute("data-line") || "0");
+      const chordIndex = parseInt(tabCell.getAttribute("data-chord") || "0");
+      const stringIndex = parseInt(tabCell.getAttribute("data-string") || "0");
+      return new Position(lineIndex, chordIndex, stringIndex);
     }
 
-    const lineIndex = parseInt(cell.getAttribute("data-line") || "0");
-    const chordIndex = parseInt(cell.getAttribute("data-chord") || "0");
-    const stringIndex = parseInt(cell.getAttribute("data-string") || "0");
-    return new Position(lineIndex, chordIndex, stringIndex);
+    const textLineParent = target.closest("[data-text-line]");
+    if (textLineParent) {
+      const lineIndex = parseInt(textLineParent.getAttribute("data-text-line") || "0");
+      return new Position(lineIndex, model.lines[lineIndex].length - 1, 0);
+    }
+
+    return null;
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -154,17 +157,17 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         // Moving up past the first string
         if (newLine > 0) {
           newLine--;
-          newString = NUM_STRINGS - 1;
+          newString = model.lines[newLine][0].length - 1;
         } else {
           newString = 0;
         }
-      } else if (newString >= NUM_STRINGS) {
+      } else if (newString >= model.lines[from.line][0].length) {
         // Moving down past the last string
         if (newLine < model.lines.length - 1) {
           newLine++;
           newString = 0;
         } else {
-          newString = NUM_STRINGS - 1;
+          newString = model.lines[newLine][0].length - 1;
         }
       }
     }
@@ -176,7 +179,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         newString = 0;
       } else if (newLine > model.lines.length - 1) {
         newLine = model.lines.length - 1;
-        newString = NUM_STRINGS - 1;
+        newString = model.lines[newLine][0].length - 1;
       }
     }
     // don't wrap, just prevent it from moving past the edge
@@ -187,7 +190,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   const updateSelectionWithMove = (dline: number, dchord: number, dstring: number) => {
     // if we are starting from regular cursor, special handling to just select the chord
-    if (selection.isSinglePosition()) {
+    if (selection.isSinglePosition() && model.isStaffLine(selection.start.line)) {
       setSelection(
         new Range(
           new Position(selection.start.line, selection.start.chord, 0),
@@ -255,25 +258,33 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   const handleInputKey = (e: React.KeyboardEvent) => {
     // if they start inputting, revert to inputting into start position
     setSelection(new Range(selection.start));
-
     const key = e.key;
-    if (key == "|") {
-      model.insertBarLine(selection.start);
-      moveCursor(0, 2, 0);
-      updateTabLines();
-      return;
-    }
 
-    let currentValue = "";
-    if (isEditing) {
-      currentValue = model.getStringValue(selection.start);
-    }
+    if (model.isStaffLine(selection.start.line)) {
+      if (key === " ") {
+        return;
+      }
+      if (key === "|") {
+        model.insertBarLine(selection.start);
+        moveCursor(0, 2, 0);
+        updateTabLines();
+        return;
+      }
 
-    const newValue = currentValue + key;
-    model.setStringValue(selection.start, newValue);
+      let currentValue = "";
+      if (isEditing) {
+        currentValue = model.getStringValue(selection.start);
+      }
+
+      const newValue = currentValue + key;
+      model.setStringValue(selection.start, newValue);
+
+      startEditing();
+    } else {
+      model.insertTextValue(selection.start, key);
+      moveCursor(0, 1, 0);
+    }
     updateTabLines();
-
-    startEditing();
   };
 
   const handleNavigationKey = (e: React.KeyboardEvent) => {
@@ -311,22 +322,37 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           model.insertChord(selection.start);
           updateTabLines();
         } else {
-          if (isEditing) {
-            moveCursor(0, 0, 0);
-            commitEdit();
+          if (model.isStaffLine(selection.start.line)) {
+            if (isEditing) {
+              moveCursor(0, 0, 0);
+              commitEdit();
+            } else {
+              startEditing();
+            }
           } else {
-            startEditing();
+            model.insertTextLineBelow(selection.start);
+            moveCursor(1, 0, 0);
+            updateTabLines();
           }
         }
         break;
       case "Backspace":
-        removeContent(currentValue, e.shiftKey, e.ctrlKey);
+        removeContent(currentValue, true, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
-          moveCursor(0, -1, 0);
+          if (model.isStaffLine(selection.start.line)) {
+            moveCursor(0, -1, 0);
+          } else if (selection.start.chord === 0) {
+            // move up if we are backspacing over a line
+            moveCursor(-1, 0, 0);
+          } else {
+            moveCursor(0, -1, 0);
+          }
         }
         break;
       case "Delete":
-        removeContent(currentValue, e.shiftKey, e.ctrlKey);
+        if (model.isStaffLine(selection.start.line) || model.getStringValue(selection.start) !== "") {
+          removeContent(currentValue, false, e.shiftKey, e.ctrlKey);
+        }
         if (!isEditing) {
           moveCursor(0, 0, 0);
         }
@@ -335,31 +361,38 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         commitEdit();
         setSelection(new Range(selection.start));
         break;
-      case "c":
-        if (e.ctrlKey) {
-          handleCopySelection(e);
-        }
-        break;
-      case "v":
-        if (e.ctrlKey) {
-          handlePasteSelection(e);
-        }
-        break;
     }
   };
 
-  const removeContent = (currentValue: string, shift: boolean, control: boolean) => {
+  const removeContent = (currentValue: string, backspace: boolean, shift: boolean, control: boolean) => {
     if (isEditing) {
       const newValue = currentValue.slice(0, -1);
       model.setStringValue(selection.start, newValue);
     } else {
       if (selection.isSinglePosition()) {
-        if (currentValue == BAR_DELIMITER || shift) {
-          model.deleteChord(selection.start);
-        } else if (control) {
-          model.deleteLine(selection.start);
+        if (model.isStaffLine(selection.start.line)) {
+          if (currentValue == BAR_DELIMITER || shift) {
+            model.deleteChord(selection.start);
+          } else if (control) {
+            model.deleteLine(selection.start);
+          } else if (backspace) {
+            model.setStringValue(
+              new Position(selection.start.line, selection.start.chord - 1, selection.start.string),
+              ""
+            );
+          } else {
+            model.setStringValue(selection.start, "");
+          }
         } else {
-          model.setStringValue(selection.start, "");
+          if (model.lines[selection.start.line].length === 1) {
+            model.deleteTextLine(selection.start);
+          } else if (backspace) {
+            model.deleteTextValue(
+              new Position(selection.start.line, Math.max(0, selection.start.chord - 1), selection.start.string)
+            );
+          } else {
+            model.deleteTextValue(selection.start);
+          }
         }
       } else {
         // currently doesn't do anything
@@ -404,18 +437,39 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Handle navigation keys
-    if (
-      ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape", "c", "v"].includes(
-        e.key
-      )
-    ) {
+    // Handle navigation and special keys
+    if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape"].includes(e.key)) {
       handleNavigationKey(e);
       return;
     }
 
+    // Handle copy/paste
+    if (e.ctrlKey && (e.key === "c" || e.key === "v")) {
+      e.preventDefault();
+      if (e.key === "c") {
+        handleCopySelection(e);
+      } else {
+        handlePasteSelection(e);
+      }
+      return;
+    }
+
+    // Handle insert text line
+    if (e.ctrlKey && (e.key === "i" || e.key === "I")) {
+      e.preventDefault();
+      let newPosition: Position;
+      if (e.shiftKey) {
+        newPosition = model.insertTextLineBelow(selection.start);
+      } else {
+        newPosition = model.insertTextLineAbove(selection.start);
+      }
+      setSelection(new Range(newPosition));
+      updateTabLines();
+      return;
+    }
+
     // Handle input keys (numbers, letters, and allowed special characters)
-    if (/^[0-9a-z/\\\-()<>~|]$/i.test(e.key)) {
+    if (/^[0-9a-z/\\\-()<>~\^\[\]| ]$/i.test(e.key)) {
       e.preventDefault();
       handleInputKey(e);
     }
@@ -440,7 +494,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   return (
     <div className={`flex flex-col justify-between overflow-hidden ${className}`}>
-      <div className="flex flex-none justify-between gap-4 ml-2 mr-2 mb-4">
+      <div className="flex flex-none justify-between gap-4 mb-2">
         <div className="flex justify-start overflow-hidden">
           <ResizingInput
             type="text"
@@ -467,83 +521,130 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         </div>
         <div className="flex-none">
           <span className="text-ide-text-muted mr-1">Tuning:</span>
-          <TuningInput value={currentTabMetadata?.tuning ?? DEFAULT_TUNING} onChange={(tuning) => {
-            updateTabMetadata(currentTab.id, { tuning: tuning})
-            setShowDeleteConfirm(false);
-          }} className="bg-transparent border-none outline-none text-ide-text mr-2"></TuningInput>
+          <TuningInput
+            value={currentTabMetadata?.tuning ?? DEFAULT_TUNING}
+            onChange={(tuning) => {
+              updateTabMetadata(currentTab.id, { tuning: tuning });
+              setShowDeleteConfirm(false);
+            }}
+            className="bg-transparent border-none outline-none text-ide-text"
+          ></TuningInput>
         </div>
       </div>
-      <div
-        className="flex-1 overflow-y-auto mb-4 outline-none inline-block font-mono text-ide-text select-none custom-scrollbar"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onMouseDown={handleMouseDown}
-        onMouseOver={handleMouseOver}
-        onMouseUp={handleMouseUp}
-      >
-        {model.lines.map((tabLine, lineIndex) => (
-          <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
-            <div>
-              {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
-                // -2 relative to start of the actual tab
-                <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
-                  {stringName}
-                </div>
-              ))}
-            </div>
-            <div>
-              {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                // -1 relative to start of the actual tab
-                <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
-              ))}
-            </div>
-            {tabLine.map((chord, chordIndex) => {
-              const maxChordLength = Math.max(...chord.map((str) => str.length));
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-2 text-ide-text custom-scrollbar">
+        <div
+          className="inline-block select-none font-mono outline-none "
+          tabIndex={0}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onMouseDown={handleMouseDown}
+          onMouseOver={handleMouseOver}
+          onMouseUp={handleMouseUp}
+        >
+          {model.lines.map((tabLine, lineIndex) => {
+            if (model.isStaffLine(lineIndex)) {
               return (
-                <div key={`${lineIndex}-${chordIndex}`}>
-                  {chord.map((stringValue, stringIndex) => (
-                    <div
-                      key={`${lineIndex}-${chordIndex}-${stringIndex}`}
-                      data-line={lineIndex}
-                      data-chord={chordIndex}
-                      data-string={stringIndex}
-                      data-cell
-                      className={`flex text-center flex-nowrap ${
-                        selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus && !isEditing
-                          ? "bg-ide-cursor"
-                          : ""
-                      }`}
-                    >
-                      <span className="relative">
-                        {stringValue}
-                        {isEditing &&
-                          // can only be in editing mode if the selection is just one long
-                          selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
-                          hasFocus && (
-                            <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
-                          )}
-                      </span>
-                      {
-                        // unless its a bar line, pad the end to match the chord + 1
-                        stringValue === BAR_DELIMITER
-                          ? ""
-                          : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE)
-                      }
-                    </div>
-                  ))}
+                <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+                  <div>
+                    {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
+                      // -2 relative to start of the actual tab
+                      <div key={`${lineIndex}--2-${stringIndex}`} className="text-ide-text-muted">
+                        {stringName}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                      // -1 relative to start of the actual tab
+                      <div key={`${lineIndex}-1-${stringIndex}`}>|</div>
+                    ))}
+                  </div>
+                  {tabLine.map((chord, chordIndex) => {
+                    const maxChordLength = Math.max(...chord.map((str) => str.length));
+                    return (
+                      <div key={`${lineIndex}-${chordIndex}`}>
+                        {chord.map((stringValue, stringIndex) => (
+                          <div
+                            key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                            data-line={lineIndex}
+                            data-chord={chordIndex}
+                            data-string={stringIndex}
+                            data-cell
+                            className={`flex text-center flex-nowrap ${
+                              selection.contains(new Position(lineIndex, chordIndex, stringIndex)) &&
+                              hasFocus &&
+                              !isEditing
+                                ? "bg-ide-cursor"
+                                : ""
+                            }`}
+                          >
+                            <span className="relative">
+                              {stringValue}
+                              {isEditing &&
+                                // can only be in editing mode if the selection is just one long
+                                selection.start.equals(new Position(lineIndex, chordIndex, stringIndex)) &&
+                                hasFocus && (
+                                  <span className={`absolute top-0 w-[2px] h-5 bg-ide-cursor animate-blink right-0`} />
+                                )}
+                            </span>
+                            {
+                              // unless its a bar line, pad the end to match the chord + 1
+                              stringValue === BAR_DELIMITER
+                                ? ""
+                                : "".padEnd(
+                                    maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1,
+                                    EMPTY_NOTE
+                                  )
+                            }
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  <div>
+                    {currentTabMetadata?.tuning.map((_, stringIndex) => (
+                      // +1 relative to length of the actual tab
+                      <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
+                    ))}
+                  </div>
                 </div>
               );
-            })}
-            <div>
-              {currentTabMetadata?.tuning.map((_, stringIndex) => (
-                // +1 relative to length of the actual tab
-                <div key={`${lineIndex}-${tabLine.length}-${stringIndex}`}>|</div>
-              ))}
-            </div>
-          </div>
-        ))}
+            } else {
+              return (
+                <div key={`${lineIndex}`} className="flex flex-wrap" data-text-line={lineIndex}>
+                  {
+                    // there should only be one line here, but we might expand it in the future
+                    tabLine.map((chord, chordIndex) => (
+                      <div key={`${lineIndex}-${chordIndex}`}>
+                        {chord.map((stringValue, stringIndex) => (
+                          <span
+                            key={`${lineIndex}-${chordIndex}-${stringIndex}`}
+                            data-line={lineIndex}
+                            data-chord={chordIndex}
+                            data-string={stringIndex}
+                            data-cell
+                            className={`flex text-center flex-nowrap relative ${
+                              selection.contains(new Position(lineIndex, chordIndex, stringIndex)) && hasFocus
+                                ? "bg-ide-cursor"
+                                : ""
+                            }`}
+                          >
+                            {
+                              // use &nbsp to make selection state apparent
+                              // TODO: need to make this work with actual data
+                              stringValue === "" || stringValue === " " ? "\u00A0" : stringValue
+                            }
+                          </span>
+                        ))}
+                      </div>
+                    ))
+                  }
+                </div>
+              );
+            }
+          })}
+        </div>
       </div>
       <div className="flex flex-none justify-end gap-4 ml-4 mr-4">
         <button onClick={() => alert("Not implemented yet 🦎")}>Export Tab</button>

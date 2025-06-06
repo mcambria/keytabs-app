@@ -168,7 +168,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         if (currentMetadata?.id === id) {
             currentMetadata = { ...metadata };
         }
-        
+
         set({ tabList: [...tabList], currentTabMetadata: currentMetadata });
         saveTabMetadata(tabList);
     }

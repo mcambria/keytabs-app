@@ -86,12 +86,18 @@ export class Range {
 
 export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => "");
 export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
-export const defaultTabLines = (): TabLines => [defaultTabLine()];
+export const defaultTextLine = () => Array.from({ length: 1 }, () => Array.from({ length: 1 }, () => ""));
+export const verseLabelLine = () => [["["], ["V"], ["e"], ["r"], ["s"], ["e"], ["]"]];
+export const chorusLabelLine = () => [["["], ["C"], ["h"], ["o"], ["r"], ["u"], ["s"], ["]  "]];
 
-const normalizeChord = (chord: Chord) => {
-  // NOOP placeholder
-  return chord
-};
+export const defaultTabLines = (): TabLines => [
+  verseLabelLine(),
+  defaultTabLine(),
+  defaultTabLine(),
+  chorusLabelLine(),
+  defaultTabLine(),
+  defaultTabLine(),
+];
 
 export class TabModel {
   id: string;
@@ -100,6 +106,10 @@ export class TabModel {
   constructor(data: TabData) {
     this.id = data?.id ?? crypto.randomUUID();
     this.lines = data?.lines ?? [defaultTabLine()];
+  }
+
+  isStaffLine(line: number): boolean {
+    return this.lines[line][0].length === NUM_STRINGS;
   }
 
   getStringValue(position: Position): string {
@@ -111,14 +121,27 @@ export class TabModel {
   }
 
   setStringValue(position: Position, value: string): void {
-    let chord = this.lines[position.line][position.chord];
-    chord[position.string] = value;
+    this.lines[position.line][position.chord][position.string] = value;
+  }
 
-    this.setChordValue(position, chord);
+  insertTextValue(position: Position, value: string) {
+    this.insertTextValues(position, [value]);
+  }
+
+  insertTextValues(position: Position, values: string[]) {
+    const asChords = values.map(v => [v])
+    this.lines[position.line].splice(position.chord, 0, ...asChords);
+  }
+
+  deleteTextValue(position: Position) {
+    this.lines[position.line].splice(position.chord, 1);
+  }
+
+  deleteTextLine(position: Position) {
+    this.lines.splice(position.line, 1);
   }
 
   setChordValue(position: Position, value: Chord): void {
-    value = normalizeChord(value);
     this.lines[position.line][position.chord] = value;
   }
 
@@ -136,10 +159,25 @@ export class TabModel {
   }
 
   insertEmptyLine(position: Position): void {
-    this.insertLines(position, [defaultTabLine()]);
+    this.insertLinesBelow(position, [defaultTabLine()]);
   }
 
-  insertLines(position: Position, lines: TabLines): void {
+  insertTextLineAbove(position: Position): Position {
+    // insert above
+    this.insertLinesAbove(position, [defaultTextLine()]);
+    return new Position(position.line, 0, 0);
+  }
+
+  insertTextLineBelow(position: Position): Position {
+    // insert above
+    this.insertLinesBelow(position, [defaultTextLine()]);
+    return new Position(position.line + 1, 0, 0);
+  }
+  insertLinesAbove(position: Position, lines: TabLines): void {
+    this.lines.splice(position.line, 0, ...lines);
+  }
+
+  insertLinesBelow(position: Position, lines: TabLines): void {
     this.lines.splice(position.line + 1, 0, ...lines);
   }
 
@@ -155,8 +193,7 @@ export class TabModel {
   }
 
   insertChords(position: Position, values: Chord[]): void {
-    const normalized = values.map(v => normalizeChord(v));
-    this.lines[position.line].splice(position.chord + 1, 0, ...normalized);
+    this.lines[position.line].splice(position.chord + 1, 0, ...values);
   }
 
   getContent(range: Range): TabLines {
@@ -186,7 +223,7 @@ export class TabModel {
       this.insertChords(selectedRange.start, lines[0]);
     }
     else {
-      this.insertLines(selectedRange.start, lines);
+      this.insertLinesBelow(selectedRange.start, lines);
     }
   }
 
