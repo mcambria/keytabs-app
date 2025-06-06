@@ -14,14 +14,11 @@ type TabEditorProps = {
 const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
-  // this empty tab model will never be used
-  // but React doesn't like it when you short-circuit creating a different amount of hooks each render
   const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: []}));
   useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
 
   const updateTabLines = () => {
-    // this saving model is very aggressive
-    // TODO: implement an on-switch and timer based auto-saving model, potentially version control would be cool
+    // this saving model is very aggressive - it might be better to auto-save on a timer or on switching
     saveCurrentTab(model.lines);
     setModel(model.clone());
   };
@@ -170,7 +167,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           newLine++;
           newString = 0;
         } else {
-          newString = model.lines[newLine][0].length;
+          newString = model.lines[newLine][0].length - 1;
         }
       }
     }
