@@ -332,6 +332,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           }
           else {
             model.insertTextLineBelow(selection.start);
+            moveCursor(1, 0, 0);
             updateTabLines();
           }
         }
@@ -339,11 +340,22 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       case "Backspace":
         removeContent(currentValue, true, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
-          moveCursor(0, -1, 0);
+          if (model.isStaffLine(selection.start.line))
+          {
+            moveCursor(0, -1, 0);
+          } else if (selection.start.chord === 0) {
+            // move up if we are backspacing over a line
+            moveCursor(-1, 0, 0);
+          }
+          else {
+            moveCursor(0, -1, 0);
+          }
         }
         break;
       case "Delete":
-        removeContent(currentValue, false, e.shiftKey, e.ctrlKey);
+        if (model.isStaffLine(selection.start.line) || model.getStringValue(selection.start) !== "") {
+          removeContent(currentValue, false, e.shiftKey, e.ctrlKey);
+        }
         if (!isEditing) {
           moveCursor(0, 0, 0);
         }
@@ -522,7 +534,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           ></TuningInput>
         </div>
       </div>
-      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-4 text-ide-text custom-scrollbar">
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-2 text-ide-text custom-scrollbar">
         <div
           className="inline-block select-none font-mono outline-none "
           tabIndex={0}
