@@ -467,6 +467,18 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       return;
     }
 
+    // select all
+    if ((e.ctrlKey && e.key === "a") || e.key === "A") {
+      setSelection(
+        new Range(
+          new Position(0, 0, 0),
+          new Position(model.lines.length - 1, model.lines[model.lines.length - 1].length - 1, NUM_STRINGS - 1)
+        )
+      );
+      e.preventDefault();
+      return;
+    }
+
     // Handle insert text line
     if (e.ctrlKey && (e.key === "i" || e.key === "I")) {
       e.preventDefault();
