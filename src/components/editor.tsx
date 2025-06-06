@@ -338,7 +338,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           model.insertEmptyLine(selection.start);
           updateTabLines();
         } else if (e.shiftKey) {
-          model.insertChord(selection.start);
+          model.insertChordAfter(selection.start);
           updateTabLines();
         } else {
           if (model.isStaffLine(selection.start.line)) {

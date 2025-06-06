@@ -188,15 +188,23 @@ export class TabModel {
     this.lines.splice(position.line, 1);
   }
 
-  insertChord(position: Position, value: Chord = defaultChord()): void {
-    this.insertChords(position, [value]);
+  insertChordAfter(position: Position, value: Chord = defaultChord()): void {
+    this.insertChordsAfter(position, [value]);
   }
 
   insertChords(position: Position, values: Chord[]): void {
+    this.lines[position.line].splice(position.chord, 0, ...values);
+  }
+
+  insertChordsAfter(position: Position, values: Chord[]): void {
     this.lines[position.line].splice(position.chord + 1, 0, ...values);
   }
 
   getContent(range: Range): TabLines {
+    if (range.isSinglePosition()) {
+      return [[[this.getStringValue(range.start)]]];
+    }
+
     const linesInRange = this.lines.filter((_, lineIndex) => lineIndex >= range.start.line && lineIndex <= range.end.line);
     if (linesInRange.length !== 1) {
       // bit of a shortcut, but ranges are enforced to always be one line or all the chords in multiple lines
@@ -204,13 +212,7 @@ export class TabModel {
     }
 
     const chordsInRange = linesInRange[0].filter((_, chordIndex) => chordIndex >= range.start.chord && chordIndex <= range.end.chord);
-    if (chordsInRange.length !== 1 || chordsInRange[0].length === NUM_STRINGS) {
-      // same idea here
-      return [chordsInRange];
-    }
-
-    // just selecting one note
-    return [[[chordsInRange[0][range.start.string]]]];
+    return [chordsInRange];
   }
 
   insertContent(selectedRange: Range, lines: TabLines, wholeLines: boolean) {
@@ -220,10 +222,11 @@ export class TabModel {
     }
     // can't know whether the whole line was selected or just chords just from the data
     else if (lines.length === 1 && !wholeLines) {
+
       this.insertChords(selectedRange.start, lines[0]);
     }
     else {
-      this.insertLinesBelow(selectedRange.start, lines);
+      this.insertLinesAbove(selectedRange.start, lines);
     }
   }
 
