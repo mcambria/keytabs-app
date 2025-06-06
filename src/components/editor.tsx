@@ -14,7 +14,7 @@ type TabEditorProps = {
 const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   let { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
-  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: []}));
+  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
   useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
 
   const updateTabLines = () => {
@@ -329,8 +329,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
             } else {
               startEditing();
             }
-          }
-          else {
+          } else {
             model.insertTextLineBelow(selection.start);
             moveCursor(1, 0, 0);
             updateTabLines();
@@ -340,14 +339,12 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       case "Backspace":
         removeContent(currentValue, true, e.shiftKey, e.ctrlKey);
         if (!isEditing) {
-          if (model.isStaffLine(selection.start.line))
-          {
+          if (model.isStaffLine(selection.start.line)) {
             moveCursor(0, -1, 0);
           } else if (selection.start.chord === 0) {
             // move up if we are backspacing over a line
             moveCursor(-1, 0, 0);
-          }
-          else {
+          } else {
             moveCursor(0, -1, 0);
           }
         }
@@ -614,7 +611,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
                 </div>
               );
             } else {
-              console.log(selection.start);
               return (
                 <div key={`${lineIndex}`} className="flex flex-wrap" data-text-line={lineIndex}>
                   {
