@@ -380,6 +380,16 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         commitEdit();
         setSelection(new Range(selection.start));
         break;
+      case "Home":
+        setSelection(new Range(new Position(selection.start.line, 0, selection.start.string)));
+        break;
+      case "End":
+        setSelection(
+          new Range(
+            new Position(selection.end.line, model.lines[selection.end.line].length - 1, selection.start.string)
+          )
+        );
+        break;
     }
   };
 
@@ -451,7 +461,20 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Handle navigation and special keys
-    if (["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown", "Enter", "Backspace", "Delete", "Escape"].includes(e.key)) {
+    if (
+      [
+        "ArrowRight",
+        "ArrowLeft",
+        "ArrowUp",
+        "ArrowDown",
+        "Enter",
+        "Backspace",
+        "Delete",
+        "Escape",
+        "Home",
+        "End",
+      ].includes(e.key)
+    ) {
       handleNavigationKey(e);
       return;
     }
