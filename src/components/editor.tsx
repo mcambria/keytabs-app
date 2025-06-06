@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Position, Range, EMPTY_NOTE, DEFAULT_TUNING, NUM_STRINGS, BAR_DELIMITER, TabModel } from "../models/tab";
 import { TabLines, useTabStore } from "@/services/tab-store";
 import ResizingInput from "./resizing-input";
 import { TuningInput } from "./tuning-input";
+import ContextMenu from "./context-menu";
 
 type SelectionDirection = "rightDown" | "leftUp";
 type ClipboardData = { isNative: true; lines: TabLines; wholeLines: boolean };
@@ -30,6 +31,11 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   const [hasFocus, setHasFocus] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Reset delete confirmation when tab changes
   useEffect(() => {
@@ -65,6 +71,10 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    // Ignore right clicks
+    if (e.button !== 0) {
+      return;
+    }
     commitEdit();
     const clickedPosition = positionFromTarget(e.target as HTMLElement);
     if (!clickedPosition) {
@@ -80,6 +90,11 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handleMouseOver = (e: React.MouseEvent) => {
+    // Ignore right clicks
+    if (e.buttons !== 1) {
+      // buttons is a bitmask, 1 means left button is down
+      return;
+    }
     if (!isSelecting) {
       return;
     }
@@ -143,7 +158,11 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    // Ignore right clicks
+    if (e.button !== 0) {
+      return;
+    }
     setIsSelecting(false);
   };
 
@@ -403,9 +422,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handleCopySelection = (_: React.KeyboardEvent) => {
-    if (!hasFocus) {
-      return;
-    }
     const selectedContent = model.getContent(selection);
     const clipboardData: ClipboardData = {
       isNative: true,
@@ -416,9 +432,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   };
 
   const handlePasteSelection = async (_: React.KeyboardEvent) => {
-    if (!hasFocus) {
-      return;
-    }
     const text = await navigator.clipboard.readText();
     if (!text) {
       return;
@@ -484,6 +497,41 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     setShowDeleteConfirm(false);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const clickedPosition = positionFromTarget(e.target as HTMLElement);
+    if (!clickedPosition) {
+      return;
+    }
+
+    // Update selection if right-clicking on a new position
+    if (!selection.contains(clickedPosition)) {
+      setSelection(new Range(clickedPosition));
+      setInitialSelectionPosition(clickedPosition);
+    }
+
+    // Show context menu
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleContextMenuClose = () => {
+    setContextMenu(null);
+  };
+
+  const handleContextMenuCopy = () => {
+    editorRef.current?.focus();
+    setHasFocus(true);
+    setTimeout(() => handleCopySelection({} as React.KeyboardEvent), 0);
+    handleContextMenuClose();
+  };
+
+  const handleContextMenuPaste = async () => {
+    editorRef.current?.focus();
+    setHasFocus(true);
+    setTimeout(async () => await handlePasteSelection({} as React.KeyboardEvent), 0);
+    handleContextMenuClose();
+  };
+
   if (!currentTab) {
     return (
       <div className={`flex flex-col justify-center items-center text-xl ide-text-muted ${className}`}>
@@ -533,7 +581,8 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       </div>
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-2 text-ide-text custom-scrollbar">
         <div
-          className="inline-block select-none font-mono outline-none "
+          ref={editorRef}
+          className="inline-block select-none font-mono outline-none"
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
@@ -541,6 +590,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           onMouseDown={handleMouseDown}
           onMouseOver={handleMouseOver}
           onMouseUp={handleMouseUp}
+          onContextMenu={handleContextMenu}
         >
           {model.lines.map((tabLine, lineIndex) => {
             if (model.isStaffLine(lineIndex)) {
@@ -655,6 +705,16 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           {showDeleteConfirm ? "Click again to confirm" : "Delete Tab"}
         </button>
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={handleContextMenuClose}
+          onCopy={handleContextMenuCopy}
+          onPaste={handleContextMenuPaste}
+        />
+      )}
     </div>
   );
 };
