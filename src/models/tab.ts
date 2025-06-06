@@ -87,7 +87,17 @@ export class Range {
 export const defaultChord = () => Array.from({ length: NUM_STRINGS }, () => "");
 export const defaultTabLine = () => Array.from({ length: INITIAL_NUM_COLUMNS }, () => defaultChord());
 export const defaultTextLine = () => Array.from({ length: 1 }, () => Array.from({ length: 1 }, () => ""));
-export const defaultTabLines = (): TabLines => [defaultTabLine()];
+export const verseLabelLine = () => [["["], ["V"], ["e"], ["r"], ["s"], ["e"], ["]"]];
+export const chorusLabelLine = () => [["["], ["C"], ["h"], ["o"], ["r"], ["u"], ["s"], ["]  "]];
+
+export const defaultTabLines = (): TabLines => [
+  verseLabelLine(),
+  defaultTabLine(),
+  defaultTabLine(),
+  chorusLabelLine(),
+  defaultTabLine(),
+  defaultTabLine(),
+];
 
 export class TabModel {
   id: string;
@@ -152,13 +162,13 @@ export class TabModel {
     this.insertLinesBelow(position, [defaultTabLine()]);
   }
 
-  insertTextLineAbove(position: Position) : Position {
+  insertTextLineAbove(position: Position): Position {
     // insert above
     this.insertLinesAbove(position, [defaultTextLine()]);
     return new Position(position.line, 0, 0);
   }
 
-  insertTextLineBelow(position: Position) : Position {
+  insertTextLineBelow(position: Position): Position {
     // insert above
     this.insertLinesBelow(position, [defaultTextLine()]);
     return new Position(position.line + 1, 0, 0);
