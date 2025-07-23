@@ -163,13 +163,11 @@ export class TabModel {
   }
 
   insertTextLineAbove(position: Position): Position {
-    // insert above
     this.insertLinesAbove(position, [defaultTextLine()]);
     return new Position(position.line, 0, 0);
   }
 
   insertTextLineBelow(position: Position): Position {
-    // insert above
     this.insertLinesBelow(position, [defaultTextLine()]);
     return new Position(position.line + 1, 0, 0);
   }
@@ -230,8 +228,35 @@ export class TabModel {
     }
   }
 
-  clearContent(_: Range) {
-    // TODO:
+  clearContent(range: Range) {
+    if (range.isSinglePosition()) {
+      if (this.isStaffLine(range.start.line)) {
+        this.setStringValue(range.start, "");
+      } else {
+        this.deleteTextValue(range.start);
+      }
+      return;
+    }
+
+    for (let lineIndex = range.start.line; lineIndex <= range.end.line; lineIndex++) {
+      if (this.isStaffLine(lineIndex)) {
+        const startChord = lineIndex === range.start.line ? range.start.chord : 0;
+        const endChord = lineIndex === range.end.line ? range.end.chord : this.lines[lineIndex].length - 1;
+        
+        for (let chordIndex = startChord; chordIndex <= endChord; chordIndex++) {
+          for (let stringIndex = 0; stringIndex < NUM_STRINGS; stringIndex++) {
+            this.setStringValue(new Position(lineIndex, chordIndex, stringIndex), "");
+          }
+        }
+      } else {
+        const startChord = lineIndex === range.start.line ? range.start.chord : 0;
+        const endChord = lineIndex === range.end.line ? range.end.chord : this.lines[lineIndex].length - 1;
+        
+        for (let chordIndex = endChord; chordIndex >= startChord; chordIndex--) {
+          this.deleteTextValue(new Position(lineIndex, chordIndex, 0));
+        }
+      }
+    }
   }
 
   clone(): TabModel {
