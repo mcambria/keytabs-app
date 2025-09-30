@@ -106,6 +106,7 @@ export class TabModel {
   constructor(data: TabData) {
     this.id = data?.id ?? crypto.randomUUID();
     this.lines = data?.lines ?? [defaultTabLine()];
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   isStaffLine(line: number): boolean {
@@ -139,6 +140,7 @@ export class TabModel {
 
   deleteTextLine(position: Position) {
     this.lines.splice(position.line, 1);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   setChordValue(position: Position, value: Chord): void {
@@ -160,6 +162,7 @@ export class TabModel {
 
   insertEmptyLine(position: Position): void {
     this.insertLinesBelow(position, [defaultTabLine()]);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   insertTextLineAbove(position: Position): Position {
@@ -173,10 +176,12 @@ export class TabModel {
   }
   insertLinesAbove(position: Position, lines: TabLines): void {
     this.lines.splice(position.line, 0, ...lines);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   insertLinesBelow(position: Position, lines: TabLines): void {
     this.lines.splice(position.line + 1, 0, ...lines);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   deleteLine(position: Position): void {
@@ -184,6 +189,7 @@ export class TabModel {
       return;
     }
     this.lines.splice(position.line, 1);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   insertChordAfter(position: Position, value: Chord = defaultChord()): void {
@@ -226,6 +232,7 @@ export class TabModel {
     else {
       this.insertLinesAbove(selectedRange.start, lines);
     }
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   clearContent(range: Range) {
@@ -263,6 +270,30 @@ export class TabModel {
     // TODO: consider using structuredClone window api instead
     // TODO: consider marking lines as dirty and only making new copies of those since 
     return new TabModel(this.toData());
+  }
+
+  ensureTextLinesBetweenStaffLines(): void {
+    let i = 0;
+    while (i < this.lines.length) {
+      if (this.isStaffLine(i)) {
+        // Check if there's a text line after this staff line
+        if (i + 1 < this.lines.length && this.isStaffLine(i + 1)) {
+          // Two staff lines in a row, insert text line between them
+          this.lines.splice(i + 1, 0, defaultTextLine());
+        } else if (i + 1 >= this.lines.length) {
+          // Staff line at the end, add text line after it
+          this.lines.splice(i + 1, 0, defaultTextLine());
+        }
+        i += 2; // Skip the text line we just ensured exists
+      } else {
+        i += 1;
+      }
+    }
+    
+    // Ensure there's a text line at the beginning if we start with a staff line
+    if (this.lines.length > 0 && this.isStaffLine(0)) {
+      this.lines.splice(0, 0, defaultTextLine());
+    }
   }
 
   toData(): TabData {

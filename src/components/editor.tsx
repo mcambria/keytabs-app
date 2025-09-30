@@ -405,6 +405,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           } else if (control) {
             model.deleteLine(selection.start);
           } else if (backspace) {
+            // TODO: this -1 can result in some relatively harmless client errors
             model.setStringValue(
               new Position(selection.start.line, selection.start.chord - 1, selection.start.string),
               ""
@@ -502,19 +503,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       return;
     }
 
-    // Handle insert text line
-    if (e.ctrlKey && (e.key === "i" || e.key === "I")) {
-      e.preventDefault();
-      let newPosition: Position;
-      if (e.shiftKey) {
-        newPosition = model.insertTextLineBelow(selection.start);
-      } else {
-        newPosition = model.insertTextLineAbove(selection.start);
-      }
-      setSelection(new Range(newPosition));
-      updateTabLines();
-      return;
-    }
 
     // Handle input keys (numbers, letters, and allowed special characters)
     if (/^[0-9a-z/\\\-()<>~\^\[\]| ]$/i.test(e.key)) {
@@ -630,7 +618,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           {model.lines.map((tabLine, lineIndex) => {
             if (model.isStaffLine(lineIndex)) {
               return (
-                <div key={`${lineIndex}`} className="flex flex-wrap mb-4">
+                <div key={`${lineIndex}`} className="flex flex-wrap">
                   <div>
                     {currentTabMetadata?.tuning.map((stringName, stringIndex) => (
                       // -2 relative to start of the actual tab
