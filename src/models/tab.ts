@@ -1,5 +1,9 @@
 import { TabData, Chord, TabLines } from "@/services/tab-store";
 
+export type StaffLineView = { kind: "staff"; lineIndex: number; chords: Chord[] };
+export type TextLineView = { kind: "text"; lineIndex: number; chars: string[] };
+export type LineView = StaffLineView | TextLineView;
+
 export const DEFAULT_TUNING = ["e", "B", "G", "D", "A", "E"];
 export const NUM_STRINGS = DEFAULT_TUNING.length;
 export const INITIAL_NUM_COLUMNS = 32;
@@ -111,6 +115,13 @@ export class TabModel {
 
   isStaffLine(line: number): boolean {
     return this.lines[line][0].length === NUM_STRINGS;
+  }
+
+  getLineView(lineIndex: number): LineView {
+    if (this.isStaffLine(lineIndex)) {
+      return { kind: "staff", lineIndex, chords: this.lines[lineIndex] as Chord[] };
+    }
+    return { kind: "text", lineIndex, chars: this.lines[lineIndex].map(chord => chord[0]) };
   }
 
   getStringValue(position: Position): string {
