@@ -1,8 +1,11 @@
 import TabEditor from "./components/editor";
+import EditorErrorBoundary from "./components/error-boundary";
 import Keybindings from "./components/keybindings";
 import TabsList from "./components/tabs-list";
+import { useTabStore } from "./services/tab-store";
 
 function App() {
+  const currentTabId = useTabStore((state) => state.currentTab?.id);
   return (
     <div className="flex h-screen w-screen bg-ide-b overflow-hidden">
       <TabsList className="h-full flex-none" />
@@ -13,7 +16,9 @@ function App() {
             ⚠️ Under Development - Your tabs may be deleted
           </div>
         </div>
-        <TabEditor className="flex-1 p-4" />
+        <EditorErrorBoundary key={currentTabId ?? "no-tab"}>
+          <TabEditor className="flex-1 p-4" />
+        </EditorErrorBoundary>
       </div>
       <Keybindings className="h-full flex-none" />
     </div>
