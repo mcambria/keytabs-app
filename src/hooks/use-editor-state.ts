@@ -28,6 +28,11 @@ export function useEditorState() {
   const startEditing = () => setIsEditing(true);
   const commitEdit = () => setIsEditing(false);
 
+  const replaceTextBlock = (startLine: number, endLine: number, text: string) => {
+    model.replaceTextBlock(startLine, endLine, text);
+    updateTabLines();
+  };
+
   return {
     // store data
     currentTab,
@@ -46,6 +51,7 @@ export function useEditorState() {
     isEditing,
     startEditing,
     commitEdit,
+    replaceTextBlock,
     // focus
     hasFocus,
     setHasFocus,

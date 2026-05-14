@@ -30,7 +30,7 @@ export async function getCellContent(page: Page, line: number, chord: number, st
 
 /** Get all cells that currently have the cursor/selection highlight class. */
 export async function getHighlightedCells(page: Page): Promise<{ line: number; chord: number; string: number }[]> {
-  const cells = page.locator("[data-cell].bg-ide-cursor");
+  const cells = page.locator("[data-cell].bg-ide-cursor, [data-cell][data-cursor]");
   const count = await cells.count();
   const result: { line: number; chord: number; string: number }[] = [];
   for (let i = 0; i < count; i++) {

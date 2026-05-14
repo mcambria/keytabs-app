@@ -114,7 +114,7 @@ export class TabModel {
   }
 
   isStaffLine(line: number): boolean {
-    return this.lines[line][0].length === NUM_STRINGS;
+    return this.lines[line]?.[0]?.length === NUM_STRINGS;
   }
 
   getLineView(lineIndex: number): LineView {
@@ -143,6 +143,17 @@ export class TabModel {
   insertTextValues(position: Position, values: string[]) {
     const asChords = values.map(v => [v])
     this.lines[position.line].splice(position.chord, 0, ...asChords);
+  }
+
+  replaceTextBlock(startLine: number, endLine: number, text: string): void {
+    const lines = text.split('\n');
+    const newTextLines = lines.map(line => {
+      const chords = line.split('').map(c => [c]);
+      chords.push([""]);
+      return chords;
+    });
+    this.lines.splice(startLine, endLine - startLine + 1, ...newTextLines);
+    this.ensureTextLinesBetweenStaffLines();
   }
 
   deleteTextValue(position: Position) {
@@ -269,9 +280,12 @@ export class TabModel {
       } else {
         const startChord = lineIndex === range.start.line ? range.start.chord : 0;
         const endChord = lineIndex === range.end.line ? range.end.chord : this.lines[lineIndex].length - 1;
-        
+
         for (let chordIndex = endChord; chordIndex >= startChord; chordIndex--) {
           this.deleteTextValue(new Position(lineIndex, chordIndex, 0));
+        }
+        if (this.lines[lineIndex].length === 0) {
+          this.lines[lineIndex] = defaultTextLine();
         }
       }
     }
@@ -284,6 +298,14 @@ export class TabModel {
   }
 
   ensureTextLinesBetweenStaffLines(): void {
+    // Repair any text lines that were left empty (e.g. by a range delete that
+    // wiped every chord) — text lines must always have at least one chord.
+    for (let j = 0; j < this.lines.length; j++) {
+      if (this.lines[j].length === 0) {
+        this.lines[j] = defaultTextLine();
+      }
+    }
+
     let i = 0;
     while (i < this.lines.length) {
       if (this.isStaffLine(i)) {
