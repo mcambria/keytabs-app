@@ -26,11 +26,12 @@ const CollapsiblePanel: React.FC<CollapsiblePanelProps> = ({
   preferenceKey,
 }) => {
   const { currentUser, updatePreferences } = useUserStore();
-  const [isCollapsed, setIsCollapsed] = useState(currentUser.preferences[preferenceKey]);
+  const persistedCollapsed = currentUser.preferences[preferenceKey];
+  const [isCollapsed, setIsCollapsed] = useState(persistedCollapsed);
 
   useEffect(() => {
-    setIsCollapsed(currentUser.preferences[preferenceKey]);
-  }, [currentUser.preferences[preferenceKey]]);
+    setIsCollapsed(persistedCollapsed);
+  }, [persistedCollapsed]);
 
   const handleCollapse = () => {
     const newCollapsedState = !isCollapsed;

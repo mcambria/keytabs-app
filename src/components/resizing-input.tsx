@@ -5,7 +5,7 @@ interface ResizingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
   maxWidth?: string;
 }
 
-export default function ResizingInput({ className, value, placeholder, minWidth, maxWidth, ...props }: ResizingInputProps) {
+export default function ResizingInput({ className, value, placeholder, minWidth: _minWidth, maxWidth: _maxWidth, ...props }: ResizingInputProps) {
   const testSpanRef = useRef<HTMLSpanElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 

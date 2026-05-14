@@ -13,6 +13,69 @@ type TabEditorProps = {
   className?: string;
 };
 
+// ---- Block helpers ----------------------------------------------------
+// A "text block" is the contiguous run of text lines around a given line
+// index. One textarea backs the whole block, joined by \n so native Enter
+// splits the block into multiple text lines.
+
+const findTextBlock = (m: TabModel, lineIndex: number): { start: number; end: number } | null => {
+  if (m.isStaffLine(lineIndex)) return null;
+  let start = lineIndex;
+  while (start > 0 && !m.isStaffLine(start - 1)) start--;
+  let end = lineIndex;
+  while (end < m.lines.length - 1 && !m.isStaffLine(end + 1)) end++;
+  return { start, end };
+};
+
+// Number of "real" characters on a text line (i.e. chars without the
+// trailing empty chord used to host the end-of-line cursor).
+const textLineLength = (m: TabModel, lineIndex: number): number => {
+  const view = m.getLineView(lineIndex);
+  return view.kind === "text" ? Math.max(0, view.chars.length - 1) : 0;
+};
+
+const blockToText = (m: TabModel, block: { start: number; end: number }): string => {
+  const out: string[] = [];
+  for (let i = block.start; i <= block.end; i++) {
+    const view = m.getLineView(i);
+    if (view.kind === "text") {
+      // chars includes a trailing "" that we drop for the textarea representation
+      out.push(view.chars.slice(0, -1).join(""));
+    }
+  }
+  return out.join("\n");
+};
+
+const positionToOffset = (
+  m: TabModel,
+  block: { start: number; end: number },
+  line: number,
+  chord: number
+): number => {
+  let offset = 0;
+  for (let i = block.start; i < line; i++) {
+    offset += textLineLength(m, i) + 1; // +1 for \n
+  }
+  return offset + Math.min(chord, textLineLength(m, line));
+};
+
+const offsetToPosition = (
+  text: string,
+  block: { start: number; end: number },
+  offset: number
+): { line: number; chord: number } => {
+  const lines = text.split("\n");
+  let remaining = offset;
+  for (let i = 0; i < lines.length; i++) {
+    if (remaining <= lines[i].length) {
+      return { line: block.start + i, chord: remaining };
+    }
+    remaining -= lines[i].length + 1;
+  }
+  const lastIdx = lines.length - 1;
+  return { line: block.start + lastIdx, chord: lines[lastIdx].length };
+};
+
 const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
   const state = useEditorState();
   const {
@@ -42,69 +105,6 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // ---- Block helpers ----------------------------------------------------
-  // A "text block" is the contiguous run of text lines around a given line
-  // index. One textarea backs the whole block, joined by \n so native Enter
-  // splits the block into multiple text lines.
-
-  const findTextBlock = (m: TabModel, lineIndex: number): { start: number; end: number } | null => {
-    if (m.isStaffLine(lineIndex)) return null;
-    let start = lineIndex;
-    while (start > 0 && !m.isStaffLine(start - 1)) start--;
-    let end = lineIndex;
-    while (end < m.lines.length - 1 && !m.isStaffLine(end + 1)) end++;
-    return { start, end };
-  };
-
-  // Number of "real" characters on a text line (i.e. chars without the
-  // trailing empty chord used to host the end-of-line cursor).
-  const textLineLength = (m: TabModel, lineIndex: number): number => {
-    const view = m.getLineView(lineIndex);
-    return view.kind === "text" ? Math.max(0, view.chars.length - 1) : 0;
-  };
-
-  const blockToText = (m: TabModel, block: { start: number; end: number }): string => {
-    const out: string[] = [];
-    for (let i = block.start; i <= block.end; i++) {
-      const view = m.getLineView(i);
-      if (view.kind === "text") {
-        // chars includes a trailing "" that we drop for the textarea representation
-        out.push(view.chars.slice(0, -1).join(""));
-      }
-    }
-    return out.join("\n");
-  };
-
-  const positionToOffset = (
-    m: TabModel,
-    block: { start: number; end: number },
-    line: number,
-    chord: number
-  ): number => {
-    let offset = 0;
-    for (let i = block.start; i < line; i++) {
-      offset += textLineLength(m, i) + 1; // +1 for \n
-    }
-    return offset + Math.min(chord, textLineLength(m, line));
-  };
-
-  const offsetToPosition = (
-    text: string,
-    block: { start: number; end: number },
-    offset: number
-  ): { line: number; chord: number } => {
-    const lines = text.split("\n");
-    let remaining = offset;
-    for (let i = 0; i < lines.length; i++) {
-      if (remaining <= lines[i].length) {
-        return { line: block.start + i, chord: remaining };
-      }
-      remaining -= lines[i].length + 1;
-    }
-    const lastIdx = lines.length - 1;
-    return { line: block.start + lastIdx, chord: lines[lastIdx].length };
-  };
 
   // Sync the offscreen textarea with the current text block when the
   // cursor is a single position on a text line.

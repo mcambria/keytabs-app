@@ -190,7 +190,7 @@ export function useKeyboardHandlers(
         model.insertContent(selection, clipboardData.lines, clipboardData.wholeLines);
         updateTabLines();
       }
-    } catch (e) {
+    } catch {
       console.log(`Tried to paste non-native content: ${text}`);
     }
   };
