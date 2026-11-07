@@ -307,9 +307,21 @@ export class TabModel {
     return entry?.[position.chord]?.[position.string] ?? "";
   }
 
+  /**
+   * Whether the chord at a position is a bar line. Bar lines span the whole
+   * chord; any "|" cell counts so a bar left partly broken by older versions
+   * is still treated (and deleted) as one.
+   */
+  isBarLine(position: Position): boolean {
+    const chord = this.getStaff(position.line)[position.chord];
+    return !!chord && chord.some((value) => value === BAR_DELIMITER);
+  }
+
+  /** Set one cell of a staff. Cells of a bar line can't be changed individually. */
   setStringValue(position: Position, value: string): void {
     const chord = this.getStaff(position.line)[position.chord];
-    if (chord) chord[position.string] = value;
+    if (!chord || this.isBarLine(position)) return;
+    chord[position.string] = value;
   }
 
   insertBarLine(position: Position): void {

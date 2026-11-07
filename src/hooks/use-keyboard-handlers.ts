@@ -3,7 +3,6 @@ import {
   Position,
   Range,
   NUM_STRINGS,
-  BAR_DELIMITER,
   isClipboardPayload,
   rowBounds,
   rowColFromOffset,
@@ -36,6 +35,11 @@ export function useKeyboardHandlers(
       model.insertBarLine(cursor);
       moveCursor(0, 2, 0);
       updateEntries();
+      return;
+    }
+
+    // bar lines span the whole chord and can't be typed over
+    if (model.isBarLine(cursor)) {
       return;
     }
 
@@ -90,9 +94,13 @@ export function useKeyboardHandlers(
 
     if (control) {
       setCursor(model.deleteEntry(cursor));
-    } else if (model.getStringValue(cursor) === BAR_DELIMITER || shift) {
+    } else if (model.isBarLine(cursor) || shift) {
       model.deleteChord(cursor);
       moveCursor(0, backspace ? -1 : 0, 0);
+    } else if (backspace && cursor.chord > 0 && model.isBarLine(new Position(cursor.line, cursor.chord - 1, 0))) {
+      // backspace acts on the chord before the cursor: a bar there goes as a whole
+      model.deleteChord(new Position(cursor.line, cursor.chord - 1, 0));
+      moveCursor(0, -1, 0);
     } else if (backspace) {
       if (cursor.chord > 0) {
         model.setStringValue(new Position(cursor.line, cursor.chord - 1, cursor.string), "");

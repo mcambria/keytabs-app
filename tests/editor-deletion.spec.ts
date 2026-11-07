@@ -142,3 +142,48 @@ test.describe("Deleting selections", () => {
     await expect.poll(async () => (await stored(page)).slice(0, 2)).toEqual(["[Verse]\n[Chorus]", expect.any(Array)]);
   });
 });
+
+test.describe("Bar lines", () => {
+  const firstChords = (page: import("@playwright/test").Page) =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem(`tab_${localStorage.getItem("current-tab-id")}`)!)
+        .entries[1].slice(0, 3)
+        .map((chord: string[]) => chord.join(""))
+    );
+
+  // goToFirstStaffLine puts the cursor at chord 0; "|" inserts a bar at chord 1
+  // and moves the cursor to chord 2
+  test.beforeEach(async ({ page }) => {
+    await page.keyboard.press("5");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("|");
+    expect(await firstChords(page)).toEqual(["5", "||||||", ""]);
+  });
+
+  test("Backspace just after a bar removes the whole bar", async ({ page }) => {
+    await page.keyboard.press("Backspace");
+    expect(await firstChords(page)).toEqual(["5", "", ""]);
+    expect((await getCursorPosition(page)).chord).toBe(1);
+  });
+
+  test("Backspace after a bar on a lower string removes the whole bar", async ({ page }) => {
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Backspace");
+    expect(await firstChords(page)).toEqual(["5", "", ""]);
+  });
+
+  test("Delete on a bar removes the whole bar", async ({ page }) => {
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Delete");
+    expect(await firstChords(page)).toEqual(["5", "", ""]);
+  });
+
+  test("Typing on a bar does not change it", async ({ page }) => {
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("7");
+    expect(await firstChords(page)).toEqual(["5", "||||||", ""]);
+  });
+});
