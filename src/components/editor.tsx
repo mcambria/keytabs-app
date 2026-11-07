@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Position, Range, TabModel } from "../models/tab";
+import { DEFAULT_TUNING, Position, Range, TabModel } from "../models/tab";
 import { useEditorState } from "@/hooks/use-editor-state";
 import { useCursorNavigation } from "@/hooks/use-cursor-navigation";
 import { useKeyboardHandlers } from "@/hooks/use-keyboard-handlers";
@@ -406,6 +406,33 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
     setShowDeleteConfirm(false);
   };
 
+  const handleExportClick = () => {
+    setShowDeleteConfirm(false);
+    const song = currentTabMetadata?.song?.trim() ?? "";
+    const artist = currentTabMetadata?.artist?.trim() ?? "";
+    const tuning = currentTabMetadata?.tuning ?? DEFAULT_TUNING;
+
+    const header: string[] = [];
+    const title = [song, artist].filter(Boolean).join(" - ");
+    if (title) header.push(title);
+    // tuning is stored high-to-low; conventionally written low-to-high
+    header.push(`Tuning: ${[...tuning].reverse().join(" ")}`);
+
+    const text = `${header.join("\n")}\n\n${model.toPlainText(tuning)}`;
+
+    const fileName =
+      (title || "tab").replace(/[\\/:*?"<>|]+/g, "").replace(/\s+/g, " ").trim() + ".txt";
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     const clickedPosition = positionFromTarget(e.target as HTMLElement);
@@ -499,6 +526,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       <EditorFooter
         showDeleteConfirm={showDeleteConfirm}
         onDelete={handleDeleteClick}
+        onExport={handleExportClick}
       />
 
       {/* offscreen textarea captures native text input for text lines */}

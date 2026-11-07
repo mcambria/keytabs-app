@@ -329,6 +329,39 @@ export class TabModel {
     }
   }
 
+  /**
+   * Render the tab as plain text that lines up in a monospace font, mirroring
+   * the column layout used by the editor's staff lines.
+   */
+  toPlainText(tuning: string[] = DEFAULT_TUNING): string {
+    const nameWidth = Math.max(0, ...tuning.map(name => name.length));
+    const out: string[] = [];
+
+    this.lines.forEach((_, lineIndex) => {
+      const view = this.getLineView(lineIndex);
+      if (view.kind === "text") {
+        out.push(view.chars.join("").trimEnd());
+        return;
+      }
+
+      const rows = Array.from({ length: NUM_STRINGS }, (_, stringIndex) =>
+        (tuning[stringIndex] ?? "").padEnd(nameWidth, " ") + BAR_DELIMITER
+      );
+      for (const chord of view.chords) {
+        const maxChordLength = Math.max(...chord.map(str => str.length));
+        chord.forEach((stringValue, stringIndex) => {
+          const padding = stringValue === BAR_DELIMITER
+            ? ""
+            : "".padEnd(maxChordLength === 0 ? 2 : maxChordLength - stringValue.length + 1, EMPTY_NOTE);
+          rows[stringIndex] += stringValue + padding;
+        });
+      }
+      out.push(...rows.map(row => row + BAR_DELIMITER));
+    });
+
+    return out.join("\n").replace(/\s+$/, "") + "\n";
+  }
+
   toData(): TabData {
     return { id: this.id, lines: [...this.lines] };
   }
