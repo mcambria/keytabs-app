@@ -75,3 +75,73 @@ test.describe("Copy and paste", () => {
     expect(c0).toContain("1");
   });
 });
+
+test.describe("Cursor after paste", () => {
+  const firstStaff = (page: import("@playwright/test").Page) =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem(`tab_${localStorage.getItem("current-tab-id")}`)!)
+        .entries[1].slice(0, 8)
+        .map((chord: string[]) => chord[0] || ".")
+        .join("")
+    );
+
+  /** Enter "1" and "2" in chords 0-1 of the first staff and copy them. */
+  const copyTwoChords = async (page: import("@playwright/test").Page) => {
+    await page.keyboard.press("1");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("2");
+    await page.keyboard.press("Enter");
+    await clickCell(page, 1, 0, 0);
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Control+c");
+  };
+
+  test("Pasting chords moves the cursor past them, so pasting again continues in order", async ({ page }) => {
+    await copyTwoChords(page);
+    await clickCell(page, 1, 4, 0);
+    await page.keyboard.press("Control+v");
+    await expect.poll(() => getCursorPosition(page)).toEqual({ line: 1, chord: 6, string: 0 });
+    await page.keyboard.press("Control+v");
+    await expect.poll(() => firstStaff(page)).toBe("12..1212");
+    expect(await getCursorPosition(page)).toEqual({ line: 1, chord: 8, string: 0 });
+  });
+
+  test("Pasting chords over a chord selection replaces it", async ({ page }) => {
+    await copyTwoChords(page);
+    // select chords 4-6 and paste over them
+    await clickCell(page, 1, 4, 0);
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Control+v");
+    await expect.poll(() => firstStaff(page)).toBe("12..12..");
+    const staffLength = await page.locator(`[data-cell][data-line="1"][data-string="0"]`).count();
+    expect(staffLength).toBe(31);
+    expect(await getCursorPosition(page)).toEqual({ line: 1, chord: 6, string: 0 });
+  });
+
+  test("Pasting a cell advances to the next chord", async ({ page }) => {
+    await page.keyboard.press("4");
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Control+c");
+    await page.keyboard.press("Control+v");
+    await expect.poll(() => firstStaff(page)).toBe("4.......");
+    expect(await getCursorPosition(page)).toEqual({ line: 1, chord: 1, string: 0 });
+    await page.keyboard.press("Control+v");
+    await expect.poll(() => firstStaff(page)).toBe("44......");
+    expect(await getCursorPosition(page)).toEqual({ line: 1, chord: 2, string: 0 });
+  });
+
+  test("Pasting a staff onto a staff puts the cursor back on the original staff", async ({ page }) => {
+    // select the whole first staff and copy it
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowDown");
+    await page.keyboard.press("Control+c");
+    await clickCell(page, 3, 5, 2);
+    await page.keyboard.press("Control+v");
+    // the pasted staff takes entry 3; the original moves down past it and its text
+    await expect.poll(() => getCursorPosition(page)).toEqual({ line: 5, chord: 5, string: 2 });
+  });
+});

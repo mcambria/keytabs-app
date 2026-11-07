@@ -183,8 +183,8 @@ test.describe("TabModel editing", () => {
     const m = model();
     const payload = m.copy(new Range(new Position(1, 0, 0), new Position(2, 5, 6)));
     expect(payload).toMatchObject({ kind: "entries" });
-    // paste at the start of "two"
-    m.paste(new Range(new Position(0, 4, 0)), payload);
+    // paste at the start of "two": the cursor stays on "two", after the paste
+    expect(m.paste(new Range(new Position(0, 4, 0)), payload)).toEqual(new Position(2, 6, 0));
     expect(m.entries).toEqual(["one", staff("1", "2", "3"), "three\ntwo", staff("1", "2", "3"), "three"]);
   });
 
@@ -195,6 +195,59 @@ test.describe("TabModel editing", () => {
     m.paste(new Range(new Position(1, 3, 0)), payload);
     expect(m.getStaff(1)).toEqual(staff("1", "2", "3", "1", "2"));
     expect(m.getStaff(1)[3]).not.toBe(m.getStaff(1)[0]);
+  });
+
+  test.describe("paste leaves the cursor after the pasted content", () => {
+    const entries = () => ["one\ntwo", staff("1", "2", "3"), "three"];
+    const chords = (...v: string[]) => ({ isNative: true, version: 2, kind: "chords", chords: staff(...v) }) as const;
+    const pasteEntries = { isNative: true, version: 2, kind: "entries", entries: [staff("9")] } as const;
+
+    test("chords: cursor stays on the chord it was on, so repeated pastes are in order", () => {
+      const m = new TabModel({ id: "t", entries: entries() });
+      let cursor = m.paste(new Range(new Position(1, 1, 2)), chords("a", "b"))!;
+      expect(cursor).toEqual(new Position(1, 3, 2));
+      cursor = m.paste(new Range(cursor), chords("a", "b"))!;
+      expect(m.getStaff(1)).toEqual(staff("1", "a", "b", "a", "b", "2", "3"));
+      expect(cursor).toEqual(new Position(1, 5, 2));
+    });
+
+    test("chords replace a chord selection", () => {
+      const m = new TabModel({ id: "t", entries: entries() });
+      const cursor = m.paste(new Range(new Position(1, 0, 0), new Position(1, 1, 5)), chords("a"));
+      expect(m.getStaff(1)).toEqual(staff("a", "3"));
+      expect(cursor).toEqual(new Position(1, 1, 0));
+    });
+
+    test("a cell overwrites and advances; not onto a bar", () => {
+      const m = new TabModel({ id: "t", entries: ["", [...staff("1", "2"), ["|", "|", "|", "|", "|", "|"]], ""] });
+      const cell = { isNative: true, version: 2, kind: "cell", value: "7" } as const;
+      expect(m.paste(new Range(new Position(1, 0, 3)), cell)).toEqual(new Position(1, 1, 3));
+      expect(m.getStaff(1)[0][3]).toBe("7");
+      expect(m.paste(new Range(new Position(1, 2, 3)), cell)).toBeNull();
+    });
+
+    test("entries on a staff go before it and the cursor stays on the staff", () => {
+      const m = new TabModel({ id: "t", entries: entries() });
+      expect(m.paste(new Range(new Position(1, 2, 4)), pasteEntries)).toEqual(new Position(3, 2, 4));
+      expect(m.entries).toEqual(["one\ntwo", staff("9"), "", staff("1", "2", "3"), "three"]);
+    });
+
+    test("entries mid-row split the row; on an empty row they replace it", () => {
+      const m = new TabModel({ id: "t", entries: ["abcd"] });
+      expect(m.paste(new Range(new Position(0, 2, 0)), pasteEntries)).toEqual(new Position(2, 0, 0));
+      expect(m.entries).toEqual(["ab", staff("9"), "cd"]);
+
+      const e = new TabModel({ id: "t", entries: ["one\n\ntwo"] });
+      expect(e.paste(new Range(new Position(0, 4, 0)), pasteEntries)).toEqual(new Position(2, 0, 0));
+      expect(e.entries).toEqual(["one", staff("9"), "two"]);
+    });
+
+    test("entries replace a whole-entry selection", () => {
+      const m = new TabModel({ id: "t", entries: entries() });
+      const cursor = m.paste(new Range(new Position(1, 0, 0), new Position(1, 2, 5)), pasteEntries);
+      expect(m.entries).toEqual(["one\ntwo", staff("9"), "three"]);
+      expect(cursor).toEqual(new Position(2, 0, 0));
+    });
   });
 
   test("toPlainText renders text rows and staffs", () => {

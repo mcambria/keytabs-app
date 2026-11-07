@@ -452,25 +452,46 @@ export class TabModel {
     });
   }
 
-  /** Paste clipboard content. Returns a new cursor position if it should move. */
+  /**
+   * Paste clipboard content, behaving like a text field: a selection the
+   * content can replace is replaced, and the returned cursor is just after the
+   * pasted content. Returns null when the content can't be pasted here.
+   */
   paste(range: Range, payload: ClipboardPayload): Position | null {
     const start = range.start;
     const onText = this.isText(start.line);
     switch (payload.kind) {
-      case "cell":
-        if (onText) return this.replaceTextSelection(range, payload.value);
-        this.setStringValue(start, payload.value);
-        return null;
-      case "chords":
-        if (onText) return null;
-        this.insertChords(start, payload.chords);
-        return null;
       case "text":
-        if (!onText) return null;
-        return this.replaceTextSelection(range, payload.text);
-      case "entries":
-        this.insertEntriesAt(start, payload.entries);
-        return null;
+        return onText ? this.replaceTextSelection(range, payload.text) : null;
+
+      case "cell": {
+        if (onText) return this.replaceTextSelection(range, payload.value);
+        if (this.isBarLine(start)) return null;
+        // cells overwrite (the grid keeps its timing), then advance like typing
+        this.setStringValue(start, payload.value);
+        return new Position(start.line, Math.min(start.chord + 1, this.entryLength(start.line) - 1), start.string);
+      }
+
+      case "chords": {
+        if (onText) return null;
+        const staff = this.getStaff(start.line);
+        if (range.isSingleLine() && !range.isSinglePosition()) {
+          staff.splice(start.chord, range.end.chord - start.chord + 1);
+        }
+        this.insertChords(start, payload.chords);
+        const after = Math.min(start.chord + payload.chords.length, staff.length - 1);
+        return new Position(start.line, after, start.string);
+      }
+
+      case "entries": {
+        let at = start;
+        if (this.isTextRange(range) && !range.isSinglePosition()) {
+          this.deleteTextRange(start.line, start.chord, range.end.chord);
+        } else if (!range.isSinglePosition() && this.isWholeEntryRange(range)) {
+          at = this.deleteEntries(start.line, range.end.line);
+        }
+        return this.insertEntriesAt(at, payload.entries);
+      }
     }
   }
 
@@ -484,20 +505,41 @@ export class TabModel {
   }
 
   /**
-   * Insert whole entries before the cursor's entry. On text, the block is split
-   * at the start of the current row so the entries appear directly above it.
+   * Insert whole entries at a position and return the position just after
+   * them (on the content the cursor was on, which they push down).
+   *
+   * - On a staff, they go before it.
+   * - On text, the block is split at the cursor. Splitting at the start or end
+   *   of a row doesn't leave an extra blank row, and pasting onto an empty row
+   *   replaces it.
    */
-  insertEntriesAt(position: Position, entries: TabEntry[]): void {
+  insertEntriesAt(position: Position, entries: TabEntry[]): Position {
     const copies = entries.map(cloneEntry);
-    if (this.isText(position.line)) {
-      const text = this.getText(position.line);
-      const { start } = rowBounds(text, rowColFromOffset(text, position.chord).row);
-      const before = start > 0 ? text.slice(0, start - 1) : "";
-      this.entries.splice(position.line, 1, before, ...copies, text.slice(start));
-    } else {
+    if (copies.length === 0) return position;
+
+    if (!this.isText(position.line)) {
+      const staff = this.entries[position.line];
       this.entries.splice(position.line, 0, ...copies);
+      this.normalize();
+      return new Position(this.entries.indexOf(staff), position.chord, position.string);
     }
+
+    const text = this.getText(position.line);
+    const offset = Math.min(position.chord, text.length);
+    let before = text.slice(0, offset);
+    let after = text.slice(offset);
+    if (before.endsWith("\n")) before = before.slice(0, -1);
+    if (after.startsWith("\n")) after = after.slice(1);
+
+    // the entries before and after this text are staffs, so only `before`
+    // and `after` can merge with the pasted entries
+    const head = normalizeEntries([before, ...copies]);
+    const last = head[head.length - 1] as string;
+    const merged = last === "" ? after : after === "" ? last : `${last}\n${after}`;
+    const cursorOffset = last === "" ? 0 : after === "" ? last.length : last.length + 1;
+    this.entries.splice(position.line, 1, ...head.slice(0, -1), merged);
     this.normalize();
+    return new Position(position.line + head.length - 1, cursorOffset, 0);
   }
 
   clearContent(range: Range): void {

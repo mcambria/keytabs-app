@@ -209,6 +209,7 @@ export function useKeyboardHandlers(
       // not ours
     }
 
+    commitEdit();
     let newCursor: Position | null = null;
     if (isClipboardPayload(parsed)) {
       newCursor = model.paste(selection, parsed);
@@ -218,9 +219,10 @@ export function useKeyboardHandlers(
       console.log(`Tried to paste non-native content: ${text}`);
       return;
     }
-    if (newCursor) {
-      setCursor(newCursor);
+    if (!newCursor) {
+      return; // nothing pasted, e.g. chords onto text
     }
+    setCursor(newCursor);
     updateEntries();
   };
 
