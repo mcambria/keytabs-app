@@ -16,7 +16,7 @@ export function useKeyboardHandlers(
   setCursor: (position: Position) => void,
   selectTo: (position: Position) => void
 ) {
-  const { model, updateEntries, selection, setSelection, isEditing, startEditing, commitEdit } = state;
+  const { model, updateEntries, undo, redo, selection, setSelection, isEditing, startEditing, commitEdit } = state;
   const cursor = selection.start;
 
   const handleInputKey = (e: React.KeyboardEvent) => {
@@ -24,7 +24,7 @@ export function useKeyboardHandlers(
 
     if (model.isText(cursor.line)) {
       setCursor(model.replaceTextSelection(selection, key));
-      updateEntries();
+      updateEntries(`text:${cursor.line}`);
       return;
     }
 
@@ -42,7 +42,7 @@ export function useKeyboardHandlers(
     const currentValue = isEditing ? model.getStringValue(cursor) : "";
     model.setStringValue(cursor, currentValue + key);
     startEditing();
-    updateEntries();
+    updateEntries(`cell:${cursor.line}:${cursor.chord}:${cursor.string}`);
   };
 
   /** Backspace / Delete. */
@@ -240,6 +240,16 @@ export function useKeyboardHandlers(
       const last = model.entries.length - 1;
       setSelection(new Range(new Position(0, 0, 0), new Position(last, model.entryLength(last) - 1, NUM_STRINGS)));
       e.preventDefault();
+      return;
+    }
+
+    if ((e.ctrlKey || e.metaKey) && ["z", "y"].includes(e.key.toLowerCase())) {
+      e.preventDefault();
+      if (e.key.toLowerCase() === "y" || e.shiftKey) {
+        redo();
+      } else {
+        undo();
+      }
       return;
     }
 

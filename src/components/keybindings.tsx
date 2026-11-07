@@ -51,6 +51,8 @@ const Keybindings: React.FC<KeyBindingsProps> = ({ className = "" }) => {
             <KeybindingItem label="Delete" keybinding="Delete" />
             <KeybindingItem label="Delete Chord(s)" keybinding="Shift + Backspace" />
             <KeybindingItem label="Delete Staff" keybinding="Ctrl + Backspace" />
+            <KeybindingItem label="Undo" keybinding="Ctrl + Z" />
+            <KeybindingItem label="Redo" keybinding="Ctrl + Shift + Z" />
           </ul>
         </div>
         <div className="mb-4">
