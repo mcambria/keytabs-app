@@ -47,10 +47,21 @@ export function useKeyboardHandlers(
 
   /** Backspace / Delete. */
   const removeContent = (backspace: boolean, shift: boolean, control: boolean) => {
-    // a range: clear it and collapse to its start
+    // a range: text is deleted, whole entries are deleted, a partial staff
+    // range is cleared (keeping later bars in place) unless Shift/Ctrl is held
     if (!selection.isSinglePosition()) {
-      model.clearContent(selection);
-      setCursor(model.isTextRange(selection) ? selection.start : new Position(selection.start.line, 0, 0));
+      commitEdit();
+      if (model.isTextRange(selection)) {
+        model.clearContent(selection);
+        setCursor(selection.start);
+      } else if (control || model.isWholeEntryRange(selection)) {
+        setCursor(model.deleteEntries(selection.start.line, selection.end.line));
+      } else if (shift) {
+        setCursor(model.deleteChords(selection));
+      } else {
+        model.clearContent(selection);
+        setCursor(new Position(selection.start.line, selection.start.chord, 0));
+      }
       updateEntries();
       return;
     }

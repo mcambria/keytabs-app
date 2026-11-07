@@ -49,7 +49,7 @@ const Keybindings: React.FC<KeyBindingsProps> = ({ className = "" }) => {
             <KeybindingItem label="Insert Staff" keybinding="Ctrl + Enter" />
             <KeybindingItem label="Delete Backward" keybinding="Backspace" />
             <KeybindingItem label="Delete" keybinding="Delete" />
-            <KeybindingItem label="Delete Chord" keybinding="Shift + Backspace" />
+            <KeybindingItem label="Delete Chord(s)" keybinding="Shift + Backspace" />
             <KeybindingItem label="Delete Staff" keybinding="Ctrl + Backspace" />
           </ul>
         </div>

@@ -112,6 +112,43 @@ test.describe("TabModel editing", () => {
     expect(m.entries).toEqual(["one\ntwo\nthree"]);
   });
 
+  test("deleteEntries removes a span and merges the text around it", () => {
+    const m = new TabModel({ id: "t", entries: ["a", staff("1"), "b", staff("2"), "c"] });
+    // staff, text, staff: cursor ends at the end of "a"
+    expect(m.deleteEntries(1, 3)).toEqual(new Position(0, 1, 0));
+    expect(m.entries).toEqual(["a\nc"]);
+  });
+
+  test("deleteEntries starting on text keeps the staff before it", () => {
+    const m = new TabModel({ id: "t", entries: ["a", staff("1"), "b", staff("2"), "c"] });
+    expect(m.deleteEntries(2, 3)).toEqual(new Position(2, 0, 0));
+    expect(m.entries).toEqual(["a", staff("1"), "c"]);
+  });
+
+  test("deleteEntries of everything leaves an empty text entry", () => {
+    const m = model();
+    expect(m.deleteEntries(0, 2)).toEqual(new Position(0, 0, 0));
+    expect(m.entries).toEqual([""]);
+  });
+
+  test("deleteChords removes a partial range, or the whole staff when all are selected", () => {
+    const m = model();
+    expect(m.deleteChords(new Range(new Position(1, 0, 0), new Position(1, 1, 5)))).toEqual(new Position(1, 0, 0));
+    expect(m.getStaff(1)).toEqual(staff("3"));
+    m.deleteChords(new Range(new Position(1, 0, 0), new Position(1, 0, 5)));
+    expect(m.entries).toEqual(["one\ntwo\nthree"]);
+  });
+
+  test("isWholeEntryRange", () => {
+    const m = model();
+    const r = (a: Position, b: Position) => m.isWholeEntryRange(new Range(a, b));
+    expect(r(new Position(1, 0, 0), new Position(1, 2, 5))).toBe(true);
+    expect(r(new Position(1, 0, 0), new Position(1, 1, 5))).toBe(false);
+    expect(r(new Position(0, 0, 0), new Position(1, 2, 6))).toBe(true);
+    expect(r(new Position(0, 0, 0), new Position(0, 7, 0))).toBe(false);
+    expect(r(new Position(1, 0, 0), new Position(1, 0, 0))).toBe(false);
+  });
+
   test("insertStaffBelow on text splits the block after the current row", () => {
     const m = model();
     m.insertStaffBelow(new Position(0, 1, 0));

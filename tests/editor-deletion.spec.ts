@@ -105,3 +105,40 @@ test.describe("Delete/Backspace with selection", () => {
     expect(content).not.toMatch(/[0-9]/);
   });
 });
+
+test.describe("Deleting selections", () => {
+  const stored = (page: import("@playwright/test").Page) =>
+    page.evaluate(() => JSON.parse(localStorage.getItem(`tab_${localStorage.getItem("current-tab-id")}`)!).entries);
+
+  test("Shift+Delete removes the selected chords", async ({ page }) => {
+    const before = await page.locator(`[data-cell][data-line="1"][data-string="0"]`).count();
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+Delete");
+    await expect(page.locator(`[data-cell][data-line="1"][data-string="0"]`)).toHaveCount(before - 2);
+  });
+
+  test("Delete on a whole-staff selection removes the staff", async ({ page }) => {
+    const before = (await stored(page)).length;
+    await page.keyboard.press("Shift+ArrowRight");
+    await page.keyboard.press("Shift+ArrowDown");
+    // the whole staff is selected
+    expect(await getHighlightedCells(page)).toHaveLength(32 * 6);
+    await page.keyboard.press("Delete");
+    // the staff and the empty text after it are gone
+    await expect.poll(async () => (await stored(page)).length).toBe(before - 2);
+    expect(await getCursorPosition(page)).toEqual({ line: 0, chord: "[Verse]".length, string: 0 });
+  });
+
+  test("Backspace on a selection across entries removes them all", async ({ page }) => {
+    // staff 1 through staff 3
+    await page.keyboard.press("Shift+ArrowDown");
+    await page.keyboard.press("Shift+ArrowDown");
+    await page.keyboard.press("Shift+ArrowDown");
+    await page.keyboard.press("Shift+ArrowDown");
+    const lines = [...new Set((await getHighlightedCells(page)).map((c) => c.line))];
+    expect(lines).toEqual([1, 2, 3]);
+    await page.keyboard.press("Backspace");
+    await expect.poll(async () => (await stored(page)).slice(0, 2)).toEqual(["[Verse]\n[Chorus]", expect.any(Array)]);
+  });
+});

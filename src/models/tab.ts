@@ -277,6 +277,16 @@ export class TabModel {
     return range.isSingleLine() && this.isText(range.start.line);
   }
 
+  /**
+   * Whether a range covers whole entries: it spans several entries, or all the
+   * chords of one staff.
+   */
+  isWholeEntryRange(range: Range): boolean {
+    if (!range.isSingleLine()) return true;
+    if (!this.isStaff(range.start.line) || range.isSinglePosition()) return false;
+    return range.start.chord === 0 && range.end.chord >= this.entryLength(range.start.line) - 1;
+  }
+
   /** Range containment that respects end-exclusive text selections. */
   rangeContains(range: Range, position: Position): boolean {
     if (this.isTextRange(range)) {
@@ -340,16 +350,38 @@ export class TabModel {
     this.normalize();
   }
 
-  /**
-   * Delete a whole entry (used for staffs). Returns where the cursor should go.
-   */
+  /** Delete a whole entry (used for staffs). Returns where the cursor should go. */
   deleteEntry(position: Position): Position {
-    const prevLine = position.line - 1;
-    const prevText = this.isText(prevLine) ? this.getText(prevLine) : "";
-    this.entries.splice(position.line, 1);
+    return this.deleteEntries(position.line, position.line);
+  }
+
+  /**
+   * Delete entries first..last (inclusive). Text left on either side merges.
+   * Returns where the cursor should go: the end of the text before the
+   * deleted entries, or the start of the text after them.
+   */
+  deleteEntries(first: number, last: number): Position {
+    const prevLine = first - 1;
+    const prevIsText = this.isText(prevLine);
+    const prevText = this.getText(prevLine);
+    this.entries.splice(first, last - first + 1);
     this.normalize();
-    const line = Math.max(0, Math.min(prevLine, this.entries.length - 1));
-    return new Position(line, this.isText(line) ? prevText.length : 0, 0);
+    if (prevLine < 0) return new Position(0, 0, 0);
+    // by the entry invariant, a staff is always followed by text
+    const line = Math.min(prevIsText ? prevLine : prevLine + 1, this.entries.length - 1);
+    return new Position(line, prevIsText ? prevText.length : 0, 0);
+  }
+
+  /** Remove the chords of a single-staff range. Returns where the cursor should go. */
+  deleteChords(range: Range): Position {
+    const staff = this.getStaff(range.start.line);
+    const start = Math.min(range.start.chord, range.end.chord);
+    const end = Math.max(range.start.chord, range.end.chord);
+    if (start === 0 && end >= staff.length - 1) {
+      return this.deleteEntries(range.start.line, range.start.line);
+    }
+    staff.splice(start, end - start + 1);
+    return new Position(range.start.line, Math.min(start, staff.length - 1), 0);
   }
 
   // ---- text operations ----
