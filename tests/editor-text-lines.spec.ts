@@ -22,43 +22,6 @@ const clickRowEnd = async (page: Page, entry: number, row = 0) => {
   await clickCell(page, entry, Number(rowEnd), 0);
 };
 
-test.describe("Insert text rows", () => {
-  test.beforeEach(async ({ page }) => {
-    await resetEditor(page);
-    await createNewTab(page);
-  });
-
-  test("Ctrl+I on a staff adds a row to the end of the block above", async ({ page }) => {
-    await goToFirstStaffLine(page);
-    await page.keyboard.press("Control+i");
-
-    await expect(rows(page, 0)).toHaveCount(2);
-    // staff stays at entry 1, cursor on the new (last) row of the block
-    await expect(getCell(page, 1, 0, 0)).toBeVisible();
-    expect(await getCursorPosition(page)).toEqual({ line: 0, chord: 8, string: 0 });
-    // the shortcut must not be treated as typing "i" into the staff
-    await expect(getCell(page, 1, 0, 0)).not.toContainText("i");
-    expect((await storedTab(page)).entries[0]).toBe("[Verse]\n");
-  });
-
-  test("Ctrl+Shift+I on a staff adds a row to the start of the block below", async ({ page }) => {
-    await goToFirstStaffLine(page);
-    await page.keyboard.press("Control+Shift+I");
-
-    await expect(rows(page, 2)).toHaveCount(2);
-    expect(await getCursorPosition(page)).toEqual({ line: 2, chord: 0, string: 0 });
-  });
-
-  test("Ctrl+I on text inserts a row above the current row", async ({ page }) => {
-    await clickRowEnd(page, 0);
-    await page.keyboard.press("Control+i");
-
-    await expect(rows(page, 0)).toHaveCount(2);
-    expect(await getCursorPosition(page)).toEqual({ line: 0, chord: 0, string: 0 });
-    expect((await storedTab(page)).entries[0]).toBe("\n[Verse]");
-  });
-});
-
 test.describe("Text blocks", () => {
   test.beforeEach(async ({ page }) => {
     await resetEditor(page);
@@ -129,6 +92,13 @@ test.describe("Text blocks", () => {
     await page.keyboard.press("Shift+End");
     await page.keyboard.type("X");
     expect((await storedTab(page)).entries[0]).toBe("[X");
+  });
+
+  test("Ctrl+I is ignored rather than typed", async ({ page }) => {
+    await goToFirstStaffLine(page);
+    await page.keyboard.press("Control+i");
+    await expect(getCell(page, 1, 0, 0)).not.toContainText("i");
+    expect((await storedTab(page)).entries.slice(0, 3)).toEqual(["[Verse]", expect.anything(), ""]);
   });
 
   test("Deleting a staff merges the text blocks around it", async ({ page }) => {

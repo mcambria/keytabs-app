@@ -384,39 +384,6 @@ export class TabModel {
     return new Position(position.line, offsetFromRowCol(text, Math.min(row, rowCount(text) - 1), 0), 0);
   }
 
-  /**
-   * Insert an empty text row above the cursor. From a staff, the row is added
-   * to the end of the text block above it. Returns the new cursor position.
-   */
-  insertTextRowAbove(position: Position): Position {
-    if (this.isStaff(position.line)) {
-      const line = position.line - 1; // always text by the entry invariant
-      const text = `${this.getText(line)}\n`;
-      this.setText(line, text);
-      return new Position(line, text.length, 0);
-    }
-    const text = this.getText(position.line);
-    const { start } = rowBounds(text, rowColFromOffset(text, position.chord).row);
-    this.setText(position.line, `${text.slice(0, start)}\n${text.slice(start)}`);
-    return new Position(position.line, start, 0);
-  }
-
-  /**
-   * Insert an empty text row below the cursor. From a staff, the row is added
-   * to the start of the text block below it. Returns the new cursor position.
-   */
-  insertTextRowBelow(position: Position): Position {
-    if (this.isStaff(position.line)) {
-      const line = position.line + 1; // always text by the entry invariant
-      this.setText(line, `\n${this.getText(line)}`);
-      return new Position(line, 0, 0);
-    }
-    const text = this.getText(position.line);
-    const { end } = rowBounds(text, rowColFromOffset(text, position.chord).row);
-    this.setText(position.line, `${text.slice(0, end)}\n${text.slice(end)}`);
-    return new Position(position.line, end + 1, 0);
-  }
-
   // ---- range operations ----
 
   copy(range: Range): ClipboardPayload {

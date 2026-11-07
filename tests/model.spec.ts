@@ -100,23 +100,6 @@ test.describe("v1 migration", () => {
 test.describe("TabModel editing", () => {
   const model = () => new TabModel({ id: "t", entries: ["one\ntwo", staff("1", "2", "3"), "three"] });
 
-  test("insertTextRowAbove/Below from a staff extend the neighbouring blocks", () => {
-    const m = model();
-    expect(m.insertTextRowAbove(new Position(1, 0, 0))).toEqual(new Position(0, 8, 0));
-    expect(m.getText(0)).toBe("one\ntwo\n");
-    expect(m.insertTextRowBelow(new Position(1, 0, 0))).toEqual(new Position(2, 0, 0));
-    expect(m.getText(2)).toBe("\nthree");
-  });
-
-  test("insertTextRowAbove/Below within text", () => {
-    const m = model();
-    // cursor on "two" (offset 5)
-    expect(m.insertTextRowAbove(new Position(0, 5, 0))).toEqual(new Position(0, 4, 0));
-    expect(m.getText(0)).toBe("one\n\ntwo");
-    expect(m.insertTextRowBelow(new Position(0, 0, 0))).toEqual(new Position(0, 4, 0));
-    expect(m.getText(0)).toBe("one\n\n\ntwo");
-  });
-
   test("deleteTextRow removes the current row", () => {
     const m = model();
     expect(m.deleteTextRow(new Position(0, 1, 0))).toEqual(new Position(0, 0, 0));

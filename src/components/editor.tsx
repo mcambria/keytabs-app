@@ -197,7 +197,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
           e.preventDefault();
           handlePasteSelection();
         } else if (
-          (ctrl && ["a", "c", "i"].includes(e.key.toLowerCase())) ||
+          (ctrl && ["a", "c"].includes(e.key.toLowerCase())) ||
           (ctrl && ["Backspace", "Enter"].includes(e.key))
         ) {
           delegate();

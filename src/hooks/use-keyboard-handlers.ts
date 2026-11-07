@@ -232,11 +232,8 @@ export function useKeyboardHandlers(
       return;
     }
 
-    if (e.ctrlKey && e.key.toLowerCase() === "i") {
-      e.preventDefault();
-      commitEdit();
-      setCursor(e.shiftKey ? model.insertTextRowBelow(cursor) : model.insertTextRowAbove(cursor));
-      updateEntries();
+    // unhandled Ctrl/Cmd combos must not be typed as characters
+    if (e.ctrlKey || e.metaKey) {
       return;
     }
 
