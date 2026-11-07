@@ -330,6 +330,9 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
         } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
           e.preventDefault();
           handleTextLinePaste();
+        } else if (e.ctrlKey && e.key.toLowerCase() === 'i') {
+          e.preventDefault();
+          handleKeyDown(e as unknown as React.KeyboardEvent);
         } else if ((e.ctrlKey || e.metaKey) && e.key === 'Backspace') {
           e.preventDefault();
           handleKeyDown(e as unknown as React.KeyboardEvent);

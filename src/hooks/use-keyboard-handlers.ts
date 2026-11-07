@@ -235,6 +235,17 @@ export function useKeyboardHandlers(
       return;
     }
 
+    if (e.ctrlKey && e.key.toLowerCase() === "i") {
+      e.preventDefault();
+      commitEdit();
+      const newPosition = e.shiftKey
+        ? model.insertTextLineBelow(selection.start)
+        : model.insertTextLineAbove(selection.start);
+      setSelection(new Range(newPosition));
+      updateTabLines();
+      return;
+    }
+
     if (/^[0-9a-z/\\\-()<>~\^\[\]| ]$/i.test(e.key)) {
       e.preventDefault();
       handleInputKey(e);
