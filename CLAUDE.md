@@ -13,7 +13,7 @@ KeyTabs is a keyboard-driven guitar tablature editor built as a React web app. U
 - `npm run preview` — Preview production build locally
 - `npm run deploy` — Build for GitHub Pages (adds `.nojekyll`)
 
-- `npm test` — Run Playwright end-to-end tests (`tests/`)
+- `npm test` — Run Playwright tests (`tests/`; `model.spec.ts` tests the model without a browser page)
 - `npm run lint` — ESLint on `src`
 
 Requires Node 22 (see `.nvmrc`).
@@ -24,14 +24,16 @@ Requires Node 22 (see `.nvmrc`).
 - `useTabStore` (`src/services/tab-store.ts`) — Current tab content, metadata, tab list. Keys prefixed with `tab_<uuid>`, `tab-metadata`, `current-tab-id`.
 - `useUserStore` (`src/services/user-store.ts`) — User preferences (panel collapse state).
 
-**Domain model:** `TabModel` (`src/models/tab.ts`) — Core data structure and manipulation logic for tablature. Two line types:
-- **Staff lines**: 6 strings per chord (standard guitar), operations for insert/delete/copy/paste.
-- **Text lines**: Free-form annotations, lyrics, section labels.
+**Domain model:** `TabModel` (`src/models/tab.ts`) — Core data structure and manipulation logic for tablature. A tab is a list of `entries` of two types:
+- **Staff entries** (`Chord[]`): 6 strings per chord (standard guitar), operations for insert/delete/copy/paste.
+- **Text entries** (`string`): a block of free-form text (annotations, lyrics, section labels), rows separated by `\n`.
 
-Uses `Position` (line, chord, string) and `Range` classes for cell addressing and selection.
+Entries always alternate text/staff, starting and ending with text (`normalizeEntries` enforces this, merging adjacent text). Stored tabs are `{ id, version: 2, entries }`; `deserializeTab` migrates the old v1 `lines` format on load.
+
+Uses `Position` (line, chord, string) and `Range` classes for cell addressing and selection. On text entries `line` is the entry, `chord` is a character offset and `string` is 0. Selections are a chord range within one staff (inclusive), a character range within one text entry (end-exclusive, like a textarea), or whole entries when spanning several. A hidden textarea in the editor owns text input and selection while the selection is inside one text entry.
 
 **Editor** (`src/components/editor.tsx`) — Main editing surface, composed from:
-- Sub-components in `src/components/editor/`: `staff-line.tsx`, `text-line.tsx`, `editor-header.tsx`, `editor-footer.tsx`
+- Sub-components in `src/components/editor/`: `staff-line.tsx`, `text-block.tsx`, `editor-header.tsx`, `editor-footer.tsx`
 - Hooks in `src/hooks/`: `use-editor-state.ts` (state), `use-cursor-navigation.ts` (movement/selection), `use-keyboard-handlers.ts` (input/clipboard)
 
 **Other components:**

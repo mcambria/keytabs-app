@@ -5,11 +5,12 @@ import { useTabStore } from "@/services/tab-store";
 export function useEditorState() {
   const { currentTab, currentTabMetadata, saveCurrentTab, deleteCurrentTab, updateTabMetadata } = useTabStore();
 
-  const [model, setModel] = useState(new TabModel(currentTab ?? { id: "", lines: [] }));
-  useEffect(() => setModel(new TabModel(currentTab ?? { id: "", lines: [] })), [currentTab]);
+  const [model, setModel] = useState(() => new TabModel(currentTab));
+  useEffect(() => setModel(new TabModel(currentTab)), [currentTab]);
 
-  const updateTabLines = () => {
-    saveCurrentTab(model.lines);
+  /** Persist the (mutated) model and re-render with a fresh copy. */
+  const updateEntries = () => {
+    saveCurrentTab(model.entries);
     setModel(model.clone());
   };
 
@@ -28,9 +29,9 @@ export function useEditorState() {
   const startEditing = () => setIsEditing(true);
   const commitEdit = () => setIsEditing(false);
 
-  const replaceTextBlock = (startLine: number, endLine: number, text: string) => {
-    model.replaceTextBlock(startLine, endLine, text);
-    updateTabLines();
+  const setTextEntry = (line: number, text: string) => {
+    model.setText(line, text);
+    updateEntries();
   };
 
   return {
@@ -41,7 +42,7 @@ export function useEditorState() {
     updateTabMetadata,
     // model
     model,
-    updateTabLines,
+    updateEntries,
     // selection
     selection,
     setSelection,
@@ -51,7 +52,7 @@ export function useEditorState() {
     isEditing,
     startEditing,
     commitEdit,
-    replaceTextBlock,
+    setTextEntry,
     // focus
     hasFocus,
     setHasFocus,

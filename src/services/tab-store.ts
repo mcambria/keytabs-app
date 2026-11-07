@@ -1,13 +1,18 @@
-import { DEFAULT_TUNING, defaultTabLines } from '@/models/tab';
+import { DEFAULT_TUNING, TAB_DATA_VERSION, defaultTabEntries, deserializeTab } from '@/models/tab';
 import { create } from 'zustand';
 
-export type TabLines = string[][][];
 export type Chord = string[];
 export type Tuning = string[];
+/** A staff: a list of chords, each with one value per string. */
+export type StaffEntry = Chord[];
+/** A block of free text (lyrics, labels, ...), rows separated by "\n". */
+export type TextEntry = string;
+export type TabEntry = StaffEntry | TextEntry;
 
 export type TabData = {
     id: string;
-    lines: TabLines;
+    version: typeof TAB_DATA_VERSION;
+    entries: TabEntry[];
 }
 
 export type TabMetadata = {
@@ -26,7 +31,7 @@ type TabContentStoreState = {
 
 type TabContentStoreActions = {
     setCurrentTab: (id: string | null) => void;
-    saveCurrentTab: (lines: TabLines) => void;
+    saveCurrentTab: (entries: TabEntry[]) => void;
     deleteCurrentTab: () => void;
     updateTabMetadata: (id: string, updates: Partial<TabMetadata>) => void;
 }
@@ -47,17 +52,26 @@ const saveCurrentTabId = (id: string) => {
     localStorage.setItem(CURRENT_TAB_ID_STORAGE_KEY, id);
 }
 
-const loadTabContent = (id: string) => {
+const newTab = (id: string): TabData => ({ id, version: TAB_DATA_VERSION, entries: defaultTabEntries() });
+
+const loadTabContent = (id: string): TabData => {
     const rawContent = localStorage.getItem(makeTabStorageId(id));
-    let tab: TabData;
-    if (rawContent) {
-        tab = JSON.parse(rawContent);
-    }
-    else {
-        tab = { id: id, lines: defaultTabLines() }
+    if (rawContent === null) {
+        const tab = newTab(id);
         saveTabContent(tab);
+        return tab;
     }
-    return tab;
+
+    const result = deserializeTab(id, rawContent);
+    if (!result) {
+        // keep the unreadable data around instead of overwriting it on next save
+        localStorage.setItem(`${makeTabStorageId(id)}_unreadable`, rawContent);
+        return newTab(id);
+    }
+    if (result.migrated) {
+        saveTabContent(result.tab);
+    }
+    return result.tab;
 }
 
 // do an initial load outside of the definitions to avoid repeats
@@ -88,16 +102,7 @@ export const useTabStore = create<TabContentState>((set, get) => ({
             return;
         }
 
-        const rawContent = localStorage.getItem(makeTabStorageId(id));
-        // if it doesn't exist in localstorage, create it
-        let tab: TabData;
-        if (rawContent) {
-            tab = JSON.parse(rawContent);
-        }
-        else {
-            tab = { id: id, lines: defaultTabLines() }
-            saveTabContent(tab);
-        }
+        const tab = loadTabContent(id);
 
         // these if/elses should be mutually exclusive but its simpler to not care about that
 
@@ -118,13 +123,13 @@ export const useTabStore = create<TabContentState>((set, get) => ({
         saveCurrentTabId(tab.id);
     },
 
-    saveCurrentTab: (lines) => {
+    saveCurrentTab: (entries) => {
         const id = get().currentTab?.id;
         if (!id) {
             return;
         }
 
-        const tab = { id: id, lines: lines };
+        const tab: TabData = { id: id, version: TAB_DATA_VERSION, entries: entries };
         saveTabContent(tab);
         set({ currentTab: tab });
 
