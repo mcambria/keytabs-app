@@ -14,7 +14,7 @@ type KeybindingItemProps = {
 const KeybindingItem: React.FC<KeybindingItemProps> = ({ label, keybinding }) => (
   <li className="flex justify-between">
     <span>{label}</span>
-    <kbd className="px-2 py-1 bg-ide-kbd rounded text-ide-text-accent-subtle">{keybinding}</kbd>
+    <kbd className="px-2 py-1 bg-ide-kbd rounded-sm text-ide-text-accent-subtle">{keybinding}</kbd>
   </li>
 );
 

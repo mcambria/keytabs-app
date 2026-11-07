@@ -29,7 +29,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
           }}
           placeholder="Song"
           minWidth="1rem"
-          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
+          className="bg-transparent border-none outline-hidden text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
         />
         <span className="mr-2 ml-2 text-ide-text-muted flex-none">by</span>
         <ResizingInput
@@ -40,7 +40,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
             onInteraction?.();
           }}
           placeholder="Artist"
-          className="bg-transparent border-none outline-none text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
+          className="bg-transparent border-none outline-hidden text-ide-text placeholder-ide-text-muted overflow-x-auto overflow-y-hidden custom-scrollbar"
         />
       </div>
       <div className="flex-none">
@@ -51,7 +51,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
             updateTabMetadata(tabId, { tuning: tuning });
             onInteraction?.();
           }}
-          className="bg-transparent border-none outline-none text-ide-text"
+          className="bg-transparent border-none outline-hidden text-ide-text"
         />
       </div>
     </div>

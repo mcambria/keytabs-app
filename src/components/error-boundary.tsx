@@ -29,7 +29,7 @@ class EditorErrorBoundary extends React.Component<Props, State> {
 
     return (
       <div className="flex flex-col items-center justify-center flex-1 p-8 text-ide-text">
-        <div className="max-w-lg w-full bg-ide-bg-hover rounded p-6 border border-ide-text-destructive/40">
+        <div className="max-w-lg w-full bg-ide-bg-hover rounded-sm p-6 border border-ide-text-destructive/40">
           <h2 className="text-lg font-medium text-ide-text-destructive mb-2">
             Something went wrong rendering this tab
           </h2>
@@ -37,25 +37,25 @@ class EditorErrorBoundary extends React.Component<Props, State> {
             The editor hit an error and stopped rendering to avoid losing the rest of your data.
             The most likely cause is a malformed tab on disk.
           </p>
-          <pre className="text-xs bg-ide-bg p-3 rounded overflow-auto max-h-40 mb-4 text-ide-text-muted">
+          <pre className="text-xs bg-ide-bg p-3 rounded-sm overflow-auto max-h-40 mb-4 text-ide-text-muted">
             {this.state.error.message}
           </pre>
           <div className="flex gap-2">
             <button
               onClick={this.reset}
-              className="px-3 py-1.5 rounded bg-ide-bg-hover-hover hover:bg-ide-highlight text-sm"
+              className="px-3 py-1.5 rounded-sm bg-ide-bg-hover-hover hover:bg-ide-highlight text-sm"
             >
               Try again
             </button>
             <button
               onClick={this.deleteCurrentTab}
-              className="px-3 py-1.5 rounded bg-ide-text-destructive/20 hover:bg-ide-text-destructive/30 text-ide-text-destructive text-sm"
+              className="px-3 py-1.5 rounded-sm bg-ide-text-destructive/20 hover:bg-ide-text-destructive/30 text-ide-text-destructive text-sm"
             >
               Delete this tab
             </button>
             <button
               onClick={this.reload}
-              className="px-3 py-1.5 rounded bg-ide-bg-hover-hover hover:bg-ide-highlight text-sm"
+              className="px-3 py-1.5 rounded-sm bg-ide-bg-hover-hover hover:bg-ide-highlight text-sm"
             >
               Reload page
             </button>

@@ -12,7 +12,7 @@ export const NewTabButton: React.FC<NewTabButtonProps> = ({ className = "" }) =>
         // will create if it doesn't exist
         setCurrentTab(id);
       }}
-      className={`mb-4 px-4 py-2 bg-ide-highlight text-ide-text-accent-primary rounded hover:bg-ide-bg-hover-hover hover:text-ide-text-accent-secondary transition-colors ${className}`}
+      className={`mb-4 px-4 py-2 bg-ide-highlight text-ide-text-accent-primary rounded-sm hover:bg-ide-bg-hover-hover hover:text-ide-text-accent-secondary transition-colors ${className}`}
     >
       Create New Tab
     </button>

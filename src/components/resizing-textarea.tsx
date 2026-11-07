@@ -37,7 +37,7 @@ export default function ResizingTextarea({
     <textarea
       ref={textareaRef}
       value={value}
-      className={`m-1 p-2 bg-ide-panel rounded text-ide-text placeholder-ide-text-muted resize-none custom-scrollbar focus:outline focus:outline-1 focus:outline-ide-text-muted ${className}`}
+      className={`m-1 p-2 bg-ide-panel rounded-sm text-ide-text placeholder-ide-text-muted resize-none custom-scrollbar focus:outline focus:outline-1 focus:outline-ide-text-muted ${className}`}
       style={{ minHeight, maxHeight }}
       placeholder={placeholder}
       rows={1}

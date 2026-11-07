@@ -1,8 +1,42 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  /* Keep Tailwind v3's default sans stack (v4 switched to a different system stack). */
+  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+  --color-ide-bg: #21252b;
+  --color-ide-panel: #1c2025;
+  --color-ide-highlight: #2c3e50;
+  --color-ide-kbd: #252b33;
+  --color-ide-bg-hover: #252b33;
+  --color-ide-bg-hover-hover: #2c3e50;
+  --color-ide-text: #cbd5e0;
+  --color-ide-text-muted: #94a3b8;
+  --color-ide-text-accent: #c4a777;
+  --color-ide-text-destructive: #d06c75;
+  --color-ide-cursor: #7f61bb;
+
+  --animate-blink: blink 1s step-end infinite;
+
+  @keyframes blink {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0;
+    }
+  }
+}
 
 @layer base {
+  /* Tailwind v4 no longer sets cursor: pointer on buttons; keep v3 behavior. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
   body {
     @apply bg-ide-bg text-ide-text;
   }
@@ -13,7 +47,7 @@
   .custom-scrollbar {
     @apply overflow-auto;
     scrollbar-width: thin;
-    scrollbar-color: theme("colors.ide.highlight") theme("colors.ide.bg");
+    scrollbar-color: var(--color-ide-highlight) var(--color-ide-bg);
   }
 
   .custom-scrollbar::-webkit-scrollbar {

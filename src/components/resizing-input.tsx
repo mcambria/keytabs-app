@@ -21,7 +21,7 @@ export default function ResizingInput({ className, value, placeholder, minWidth:
         ref={inputRef}
         type="text"
         value={value}
-        className={`border-none bg-transparent focus:outline-none`}
+        className={`border-none bg-transparent focus:outline-hidden`}
         placeholder={placeholder}
         {...props}
       />

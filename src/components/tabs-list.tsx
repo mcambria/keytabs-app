@@ -26,7 +26,7 @@ const TabsList: React.FC<TabsListProps> = ({ className = "" }) => {
           {tabList.map((tab) => (
             <div
               key={tab.id}
-              className={`flex items-center justify-between p-2 cursor-pointer rounded transition-colors ${
+              className={`flex items-center justify-between p-2 cursor-pointer rounded-sm transition-colors ${
                 tab.id === currentTab?.id
                   ? "bg-ide-bg-hover text-ide-text-accent"
                   : "bg-ide-panel hover:bg-ide-bg-hover"

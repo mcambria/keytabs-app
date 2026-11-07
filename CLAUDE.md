@@ -13,7 +13,10 @@ KeyTabs is a keyboard-driven guitar tablature editor built as a React web app. U
 - `npm run preview` — Preview production build locally
 - `npm run deploy` — Build for GitHub Pages (adds `.nojekyll`)
 
-No test runner or linter is configured.
+- `npm test` — Run Playwright end-to-end tests (`tests/`)
+- `npm run lint` — ESLint on `src`
+
+Requires Node 22 (see `.nvmrc`).
 
 ## Architecture
 
@@ -44,8 +47,8 @@ Uses `Position` (line, chord, string) and `Range` classes for cell addressing an
 
 ## Styling
 
-Dark IDE-inspired theme using Tailwind CSS with custom colors defined in `tailwind.config.js`. Monospace font for tab display.
+Dark IDE-inspired theme using Tailwind CSS v4 (via `@tailwindcss/vite`) with custom colors defined in the `@theme` block of `src/index.css`. Monospace font for tab display.
 
 ## Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) deploys to GitHub Pages on push to `main`. Builds with Node 20.
+GitHub Actions (`.github/workflows/deploy.yml`) deploys to GitHub Pages on push to `main`. Builds with the Node version in `.nvmrc`.

@@ -23,7 +23,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onClose, onCopy, onPast
 
   return (
     <div
-      className="fixed bg-ide-panel border border-ide-highlight rounded-sm shadow-lg py-1 z-50 min-w-[150px]"
+      className="fixed bg-ide-panel border border-ide-highlight rounded-xs shadow-lg py-1 z-50 min-w-[150px]"
       style={{ left: x, top: y }}
       onClick={(e) => e.stopPropagation()}
     >

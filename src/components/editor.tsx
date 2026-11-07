@@ -485,7 +485,7 @@ const TabEditor: React.FC<TabEditorProps> = ({ className = "" }) => {
       <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden mb-2 text-ide-text custom-scrollbar">
         <div
           ref={editorRef}
-          className="inline-block select-none font-mono outline-none"
+          className="inline-block select-none font-mono outline-hidden"
           tabIndex={0}
           onKeyDown={handleKeyDown}
           onFocus={handleFocus}
